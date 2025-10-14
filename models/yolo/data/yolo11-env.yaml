@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.12
+  - python=3.9.23
   - pip
   #- cudatoolkit=12.1        # CUDA compatible con RTX serie 5000
   - numpy
