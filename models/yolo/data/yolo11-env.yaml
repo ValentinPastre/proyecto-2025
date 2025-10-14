@@ -1,0 +1,17 @@
+name: yolo11-env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  #- cudatoolkit=12.1        # CUDA compatible con RTX serie 5000
+  - numpy
+  - opencv
+  - pip:
+      - torch==2.7.1+cu128
+      - torchvision==0.22.1+cu128
+      - torchaudio==2.7.1+cu128
+      - ultralytics==8.3.205
+      - pyyaml
+      - requests

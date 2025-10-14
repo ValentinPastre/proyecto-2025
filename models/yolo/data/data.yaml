@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 6
+names: ['Mate de Calabaza', 'Mate de Ceramica', 'Mate de Madera', 'Mate de Metal', 'Mate de Plastico', 'Mate de Taba']
+
+roboflow:
+  workspace: image-detection-tds7w
+  project: 75.70-mate-uqqpg
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/image-detection-tds7w/75.70-mate-uqqpg/dataset/2
