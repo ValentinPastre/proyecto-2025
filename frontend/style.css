@@ -1,0 +1,60 @@
+/*                       ESTILO PRINCIPAL                       */
+/*  Define el estilo visual de la aplicación, incluyendo
+    la disposición de los elementos, colores y tipografía. 
+    Se aplican estilos a los IDs definidos en index.html   */
+
+
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f3f4f6;
+  color: #222;
+  margin: 0;
+  padding: 1em;
+}
+
+h1 {
+  margin-bottom: 1em;
+}
+
+.camera-container {
+  position: relative;
+  display: inline-block;
+}
+
+video, canvas {
+  width: 480px;
+  height: 360px;
+  border-radius: 8px;
+  background: #000;
+}
+
+.controls {
+  margin-top: 1em;
+}
+
+button {
+  margin: 0.5em;
+  padding: 0.7em 1.2em;
+  border: none;
+  border-radius: 8px;
+  background-color: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+button:hover {
+  background-color: #1d4ed8;
+}
+
+.result {
+  margin-top: 1.5em;
+  background: white;
+  border-radius: 10px;
+  padding: 1em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}

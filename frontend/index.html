@@ -1,0 +1,36 @@
+<!--                       ESTRUCTURA PRINCIPAL                       -->
+<!--    Contiene elementos visibles (botones, video, texto, etc)
+        y los enlaces a script.js (<script src="script.js"></script>)
+        y style.css (<link rel="stylesheet" href="style.css" />)     -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visión Asistida</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>🧠 Visión Asistida</h1>
+
+  <div class="camera-container">
+    <video id="camera" autoplay playsinline></video>
+    <canvas id="snapshot"></canvas>
+  </div>
+
+  <div class="controls">
+    <button id="captureBtn">📸 Capturar</button>
+    <button id="uploadBtn">📁 Subir imagen</button>
+    <input type="file" id="fileInput" accept="image/*" hidden />
+  </div>
+
+  <div class="result">
+    <h2>Resultado:</h2>
+    <p id="captionText">Esperando imagen...</p>
+    <audio id="audioPlayer" controls></audio>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
