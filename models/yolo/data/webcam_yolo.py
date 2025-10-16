@@ -3,7 +3,7 @@ import cv2
 
 # Carga los dos modelos
 model_coco = YOLO(r"..\data\yolo11s.pt")
-model_custom = YOLO(r"..\runs\detect\train10\weights\best.pt")
+model_custom = YOLO(r"..\runs\detect\train11\weights\best.pt")
 
 cap = cv2.VideoCapture(0)
 
