@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: yolo_detection_app
+    ports:
+      - "3000:3000"       # Mapea el puerto del contenedor al host
+    volumes:
+      - ./models:/app/models         # Para que los modelos estén accesibles
+      - ./api/uploads:/app/api/uploads # Carpeta para archivos subidos
+      - ./frontend:/app/frontend     # Carpeta frontend
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
