@@ -7,7 +7,7 @@ from ultralytics import YOLO
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-MODEL_PATH = os.path.join(BASE_DIR, "../models/yolo/data/runs/detect/train11/weights/best.pt")
+MODEL_PATH = os.path.join(BASE_DIR, "../models/yolo/data/yolo11s.pt")
 
 def main():
     image_path = sys.argv[1]
@@ -21,7 +21,7 @@ def main():
     for r in results:
         for box in r.boxes:
             objects.append({
-                "class": int(box.cls[0]),
+                "class": r.names[int(box.cls[0])],
                 "conf": float(box.conf[0]),
                 "bbox": box.xyxy[0].tolist()
             })
