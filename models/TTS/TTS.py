@@ -3,47 +3,50 @@
 # 2️⃣ Install espeak, used for English OOD fallback and some non-English languages
 # !apt-get -qq -y install espeak-ng > /dev/null 2>&1
 import os
-#os.system("python3 -m pip install kokoro>=0.9.4 soundfile") # "pip install kokoro>=0.9.4 soundfile"
-#os.system("sudo pacman -S espeak-ng") # Si no usas pacman usar "apt-get install -y espeak-ng"
-
-# 3️⃣ Initalize a pipeline
-from kokoro import KPipeline
-from IPython.display import display, Audio
 import soundfile as sf
 import torch
+from kokoro import KPipeline
 
-output_dir = os.path.join("models", "TTS", "Outputs")
+# Inicializamos la pipeline solo una vez (fuera de la función para que no se reinicie cada vez)
+pipeline = KPipeline(lang_code='b')  # 🇪🇸 Español (e) / 🇺🇸 Inglés (a) / 🇧🇷 Portugués (p), etc.
 
-# 🇺🇸 'a' => American English, 🇬🇧 'b' => British English
-# 🇪🇸 'e' => Spanish es
-# 🇫🇷 'f' => French fr-fr
-# 🇮🇳 'h' => Hindi hi
-# 🇮🇹 'i' => Italian it
-# 🇯🇵 'j' => Japanese: pip install misaki[ja]
-# 🇧🇷 'p' => Brazilian Portuguese pt-br
-# 🇨🇳 'z' => Mandarin Chinese: pip install misaki[zh]
-pipeline = KPipeline(lang_code='b') # <= make sure lang_code matches voice, reference above.
+# Carpeta de salida
+OUTPUT_DIR = os.path.join("models", "TTS", "Outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# This text is for demonstration purposes only, unseen during training
-# Textos de ejemplo
-text = 'The tendrils of my hair illuminate beneath the amber glow. Bathing. It must be this one. The last remaining streetlight to have withstood the test of time. The last yet to be replaced by the sickening blue-green of the future. I bathe. Calm; breathing air of the present but living in the past. The light flickers. I flicker back.'
-#text = 'Ok guys, lets see in the spider mode how to program a number Singh.'
-#text = 'Albion online es un MMORPG no lineal en el que escribes tu propia historia sin limitarte a seguir un camino prefijado'
+def generar_audio(texto: str, nombre_archivo: str = "output.wav", voz: str = "bm_fable", velocidad: float = 1.0) -> str:
+    """
+    Genera un archivo de audio a partir de un texto usando Kokoro TTS.
+    
+    Parámetros:
+    ----------
+    texto : str
+        Texto que se convertirá en voz.
+    nombre_archivo : str
+        Nombre del archivo WAV a guardar.
+    voz : str
+        Nombre de la voz. Ej: 'em_santa' (español), 'bm_fable' (británico), 'hm_omega' (hindi)
+    velocidad : float
+        Factor de velocidad de la voz (1.0 = normal)
 
-# 4️⃣ Generate, display, and save audio files in a loop.
-generator = pipeline(
-    text, voice='bm_fable', # <= change voice here "Hindi = hm_omega", "British = bm_fable", "Spanish = em_santa"
-    speed=1, 
-    split_pattern=r'\n+'
-)
-# Alternatively, load voice tensor directly:
-# voice_tensor = torch.load('path/to/voice.pt', weights_only=True)
-# generator = pipeline(
-#     text, voice=voice_tensor,
-#     speed=1, split_pattern=r'\n+'
-# )
+    Retorna:
+    -------
+    str : Ruta absoluta del archivo de audio generado.
+    """
+    # Generamos el audio
+    generator = pipeline(
+        texto,
+        voice=voz,
+        speed=velocidad,
+        split_pattern=r'\n+'
+    )
+    
+    # Guardamos el primer clip (si hay más, los concatenas o iteras)
+    output_path = os.path.join(OUTPUT_DIR, nombre_archivo)
+    
+    for i, (gs, ps, audio) in enumerate(generator):
+        sf.write(output_path, audio, 24000)
+        print(f"✅ Audio generado y guardado en: {output_path}")
+        break  # Quitamos esto si quieres procesar múltiples partes del texto
 
-for i, (gs, ps, audio) in enumerate(generator):
-    output_path = os.path.join(output_dir, f"{i}.wav")
-    sf.write(output_path, audio, 24000)
-    print(f"✅ Archivo guardado: {output_path}")
+    return output_path
