@@ -2,12 +2,12 @@ train: ../train/images
 val: ../valid/images
 test: ../test/images
 
-nc: 6
-names: ['Mate de Calabaza', 'Mate de Ceramica', 'Mate de Madera', 'Mate de Metal', 'Mate de Plastico', 'Mate de Taba']
+nc: 72
+names: ['aeroplane', 'backpack', 'banana', 'baseball bat', 'baseball glove', 'bear', 'bed', 'bench', 'bicycle', 'bird', 'boat', 'book', 'bottle', 'bowl', 'broccoli', 'bus', 'cake', 'car', 'carrot', 'cat', 'cell phone', 'chair', 'clock', 'cup', 'diningtable', 'dog', 'donut', 'elephant', 'fork', 'frisbee', 'giraffe', 'handbag', 'horse', 'hot dog', 'kite', 'knife', 'laptop', 'mate', 'microwave', 'motorbike', 'mouse', 'orange', 'oven', 'person', 'pizza', 'pottedplant', 'refrigerator', 'remote', 'sandwich', 'scissors', 'sink', 'skateboard', 'skis', 'snowboard', 'sofa', 'spoon', 'sports ball', 'stop sign', 'suitcase', 'teddy bear', 'tennis racket', 'tie', 'toilet', 'toothbrush', 'traffic light', 'train', 'truck', 'tvmonitor', 'umbrella', 'vase', 'wine glass', 'zebra']
 
 roboflow:
   workspace: image-detection-tds7w
-  project: 75.70-mate-uqqpg
+  project: coco-128-uwqxr
   version: 2
   license: CC BY 4.0
-  url: https://universe.roboflow.com/image-detection-tds7w/75.70-mate-uqqpg/dataset/2
+  url: https://universe.roboflow.com/image-detection-tds7w/coco-128-uwqxr/dataset/2
