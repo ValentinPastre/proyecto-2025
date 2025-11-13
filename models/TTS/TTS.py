@@ -2,17 +2,20 @@
 # !pip install -q kokoro>=0.9.4 soundfile
 # 2️⃣ Install espeak, used for English OOD fallback and some non-English languages
 # !apt-get -qq -y install espeak-ng > /dev/null 2>&1
+# !pip install sounddevice
 import os
 import soundfile as sf
 import torch
 from kokoro import KPipeline
 
-# Inicializamos la pipeline solo una vez (fuera de la función para que no se reinicie cada vez)
-pipeline = KPipeline(lang_code='b')  # 🇪🇸 Español (e) / 🇺🇸 Inglés (a) / 🇧🇷 Portugués (p), etc.
+
+# Inicializamos la pipeline solo una vez 
+pipeline = KPipeline(lang_code='b')  # Español (e) / Inglés (b)
 
 # Carpeta de salida
 OUTPUT_DIR = os.path.join("models", "TTS", "Outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 def generar_audio(texto: str, nombre_archivo: str = "output.wav", voz: str = "bm_fable", velocidad: float = 1.0) -> str:
     """
@@ -43,10 +46,11 @@ def generar_audio(texto: str, nombre_archivo: str = "output.wav", voz: str = "bm
     
     # Guardamos el primer clip (si hay más, los concatenas o iteras)
     output_path = os.path.join(OUTPUT_DIR, nombre_archivo)
-    
+
     for i, (gs, ps, audio) in enumerate(generator):
         sf.write(output_path, audio, 24000)
         print(f"✅ Audio generado y guardado en: {output_path}")
-        break  # Quitamos esto si quieres procesar múltiples partes del texto
+
+        break
 
     return output_path
