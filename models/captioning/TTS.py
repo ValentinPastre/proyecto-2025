@@ -4,7 +4,7 @@ import soundfile as sf
 from kokoro import KPipeline
 
 # Inicializamos pipeline una sola vez
-pipeline = KPipeline(lang_code='b')  # Inglés = 'b', Español = 'e'
+pipeline = KPipeline(lang_code='e')  # Inglés = 'b', Español = 'e'
 
 # Carpeta de salida
 OUTPUT_DIR = os.path.join("models", "TTS", "Outputs")
