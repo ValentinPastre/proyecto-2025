@@ -8,29 +8,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visión Asistida</title>
+  <title>Visión Asistida - Login</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Visión Asistida</h1>
 
-  <div class="camera-container">
-    <video id="camera" autoplay playsinline></video>
-    <canvas id="snapshot"></canvas>
+  <!--Parte del Login-->
+  <div id="loginContainer" class="container">
+    <h1 class="title">Iniciar Sesión</h1>
+    <input id="loginEmail" type="email" placeholder="Email" class="input" />
+    <input id="loginPassword" type="password" placeholder="Contraseña" class="input" />
+
+    <button id="loginBtn" class="btn">Entrar</button>
+
+    <p class="switchText">
+      ¿No tenés cuenta? <span id="goRegister" class="switchLink">Registrate</span>
+    </p>
   </div>
 
-  <div class="controls">
-    <button id="captureBtn">Capturar</button>
-    <button id="uploadBtn">Subir imagen</button>
-    <input type="file" id="fileInput" accept="image/*" hidden />
+  <!--Parte del Registro-->
+  <div id="registerContainer" class="container hidden">
+    <h1 class="title">Registrarse</h1>
+    <input id="regEmail" type="email" placeholder="Email" class="input" />
+    <input id="regPassword" type="password" placeholder="Contraseña" class="input" />
+    <input id="regPassword2" type="password" placeholder="Repetir contraseña" class="input" />
+
+    <button id="registerBtn" class="btn">Crear Cuenta</button>
+
+    <p class="switchText">
+      ¿Ya tenés cuenta? <span id="goLogin" class="switchLink">Iniciar sesión</span>
+    </p>
   </div>
 
-  <div class="result">
-    <h2>Resultado:</h2>
-    <p id="captionText">Esperando imagen...</p>
-    <audio id="audioPlayer" controls></audio>
+  <!--Parte de la Cámara-->
+  <div id="cameraPage" class="hidden">
+
+    <h1 class="title">Visión Asistida</h1>
+
+    <div class="camera-container">
+      <video id="camera" autoplay playsinline></video>
+      <canvas id="snapshot"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="captureBtn" class="btn">📸 Capturar</button>
+      <button id="uploadBtn" class="btn">📁 Subir imagen</button>
+      <input type="file" id="fileInput" accept="image/*" hidden />
+    </div>
+
+    <div class="result">
+      <h2>Resultado:</h2>
+      <p id="captionText">Esperando imagen...</p>
+      <audio id="audioPlayer" controls></audio>
+    </div>
+
   </div>
 
   <script src="script.js"></script>
 </body>
 </html>
+
