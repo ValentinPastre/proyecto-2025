@@ -1,0 +1,6 @@
+{
+    "caption_ingles": "there is a man with headphones on sitting in a chair",
+    "caption_espanol": "hay un hombre con auriculares sentado en una silla",
+    "audio_generado": "models\\TTS\\Outputs\\caption_audio_en.wav",
+    "tiempo_segundos": 7.85
+}

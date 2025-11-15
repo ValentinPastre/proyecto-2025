@@ -1,8 +1,3 @@
-# 1️⃣ Install kokoro
-# !pip install -q kokoro>=0.9.4 soundfile
-# 2️⃣ Install espeak for English fallback
-# !apt-get -qq -y install espeak-ng > /dev/null 2>&1
-# !pip install sounddevice
 
 import os
 import soundfile as sf
@@ -34,7 +29,7 @@ def generar_audio(texto: str, nombre_archivo: str = "output.wav",
     # Guardamos el primer fragmento del audio
     for i, (gs, ps, audio) in enumerate(generator):
         sf.write(output_path, audio, 24000)
-        print(f"✅ Audio generado y guardado en: {output_path}")
+        print(f" Audio generado y guardado en: {output_path}")
         break
 
     return output_path
