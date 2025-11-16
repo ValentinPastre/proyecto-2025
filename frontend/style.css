@@ -1,27 +1,19 @@
-/*                       ESTILO PRINCIPAL                       */
-/*  Define el estilo visual de la aplicación, incluyendo
-    la disposición de los elementos, colores y tipografía. 
-    Se aplican estilos a los IDs definidos en index.html        */
-    
-
+/* Reset y mejor manejo de medidas */
 * {
   box-sizing: border-box;
 }
 
-/* Fondo general */
+/* Body centra todo el contenido */
 body {
   font-family: Arial, sans-serif;
   background: #eef2f7;
   margin: 0;
-  padding: 0;
-}
-
-/* Centrado exclusivo para login y registro */
-.auth-wrapper {
+  padding: 2em;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  overflow-x: hidden; /* Evitar scroll horizontal */
 }
 
 /* Ocultar elementos usados para accesibilidad */
@@ -30,31 +22,55 @@ body {
   left: -9999px;
 }
 
-/* Esconder elementos */
+/* Esconder elementos (para toast, etc) */
 .hidden {
   display: none !important;
 }
 
-/* Caja del formulario */
-.container {
+/*
+  NUEVO: Estilo base para todas las "páginas"
+  - 'display: none' por defecto.
+  - La clase '.active' la pondrá el router de JS.
+*/
+.page-container {
+  display: none; /* Ocultas por defecto */
+  flex-direction: column;
+  align-items: center;
+  width: 350px;
   background: white;
   padding: 2em;
   border-radius: 12px;
-  width: 350px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-align: center;
+}
+
+/*
+  NUEVO: Regla que muestra la página activa.
+  Usamos flex para que los layouts internos funcionen.
+*/
+.page-container.active {
+  display: flex;
   animation: fadeIn 0.3s ease;
 }
 
-/* Animacion sutil */
+/* Estilo para la página de la cámara (mismo de la vez pasada) */
+.camera-layout {
+  width: 95%;
+  max-width: 600px;
+  gap: 1.5em;
+  padding: 2em;
+}
+
+/* Animación sutil */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Titulo */
+/* Título */
 .title {
-  margin-bottom: 1em;
+  margin: 0;
+  margin-bottom: 0.5em;
   font-size: 1.8em;
   color: #111827;
   font-weight: 600;
@@ -88,13 +104,14 @@ body {
   border-radius: 8px;
   cursor: pointer;
   transition: 0.2s ease;
+  font-weight: 600;
 }
 
 .btn:hover {
   background: #1e40af;
 }
 
-/* Boton secundario */
+/* Botón secundario */
 .btn-secondary {
   background: #6b7280;
 }
@@ -109,49 +126,87 @@ body {
   font-size: 0.9em;
 }
 
+/* MODIFICADO: Estilos para el link <a> */
 .switchLink {
   color: #2563eb;
   cursor: pointer;
   font-weight: bold;
+  text-decoration: none; /* Quitar subrayado */
+}
+.switchLink:hover {
+  text-decoration: underline; /* Subrayar al pasar el mouse */
 }
 
-/* Camara */
-.camera-page {
-  text-align: center;
-  padding: 2em;
-}
 
 #cameraLoading {
   font-size: 1.2em;
-  margin-bottom: 1em;
+  margin: 1em 0;
 }
 
+/* Contenedor de video responsivo */
 .camera-container {
+  width: 100%;
+  max-width: 500px;
   position: relative;
-  display: inline-block;
-  margin-bottom: 1em;
+  margin: 0;
 }
 
+/* Video y canvas responsivos */
 video, canvas {
-  width: 480px;
-  height: 360px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
   border-radius: 10px;
   background: black;
 }
 
+/* Controles (layout de botones) */
 .controls {
-  margin-bottom: 1em;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1em;
+  margin: 0;
 }
 
+/* Arreglo de botones "largos" */
+.controls .btn {
+  width: auto;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  min-width: 140px;
+}
+
+/* Resultado */
 .result {
-  background: white;
-  padding: 1em;
+  background: #f9fafb;
+  padding: 1.5em;
   border-radius: 10px;
-  width: 480px;
-  margin: 0 auto;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 500px;
+  margin: 0;
+  border: 1px solid #e5e7eb;
 }
 
+.result h2 {
+  margin: 0 0 0.5em 0;
+  font-size: 1.2em;
+  color: #111827;
+}
+
+#captionText {
+  margin: 0 0 1em 0;
+  min-height: 1.2em;
+  color: #374151;
+}
+
+#audioPlayer {
+  width: 100%;
+}
+
+
+/* --- Mensajes de Formulario y Toast --- */
 .form-message {
   min-height: 1.4em;
   margin-bottom: 0.6em;
@@ -162,27 +217,23 @@ video, canvas {
   transform: translateY(-4px);
   pointer-events: none;
 }
-
-/* mensajes de error/exito visibles */
 .form-message.visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
-
 .form-message.error {
   color: #b91c1c;
 }
-
 .form-message.success {
   color: #047857;
 }
-
-.input.input-error {
+.input.input-error,
+.input[aria-invalid="true"] {
   border-color: #ef4444;
   box-shadow: 0 0 6px rgba(239,68,68,0.12);
+  border-style: solid;
 }
-
 .toast {
   position: fixed;
   top: 18px;
@@ -199,15 +250,23 @@ video, canvas {
   opacity: 0;
   pointer-events: none;
 }
-
 .toast.visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
   pointer-events: auto;
 }
 
-/* accesibilidad visual */
-.input[aria-invalid="true"] {
-  border-style: solid;
+/* Botón de Logout */
+.btn-logout {
+  position: fixed;
+  top: 1.5em;
+  right: 1.5em;
+  width: auto;
+  padding: 0.6em 1em;
+  font-size: 0.9em;
+  background: #dc2626;
+  z-index: 500;
 }
-
+.btn-logout:hover {
+  background: #991b1b;
+}
