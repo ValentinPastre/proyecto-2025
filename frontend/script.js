@@ -3,8 +3,8 @@
     enviar datos al backend y actualizar la interfaz de usuario. 
     Se usan los IDs definidos en index.html para manipular 
     los elementos                                               */
-    
-/* ==== LOGIN Y REGISTRO CON MENSAJES EN PANTALLA ==== */
+
+
 
 const loginContainer = document.getElementById("loginContainer");
 const registerContainer = document.getElementById("registerContainer");
@@ -26,7 +26,7 @@ document.getElementById("goLogin").onclick = () => {
   loginContainer.classList.remove("hidden");
 };
 
-/* helpers de UI y validación */
+
 function showFormMessage(containerEl, text, type = "error", timeout = 4000) {
   containerEl.textContent = text;
   containerEl.classList.remove("error", "success");
@@ -68,11 +68,10 @@ function markInputError(inputEl, flag = true) {
 }
 
 function validateEmail(email) {
-  // regex sencillo y común para validación de email
+  // regex 
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* Registrar usuario */
 document.getElementById("registerBtn").onclick = () => {
   clearFormMessages();
 
@@ -110,14 +109,13 @@ document.getElementById("registerBtn").onclick = () => {
     return showFormMessage(registerMessage, "Las contraseñas no coinciden", "error");
   }
 
-  // Guardado local (temporal)
+  // Guardado local (cambiar  con una base de datos luego)
   localStorage.setItem("user_email", email);
   localStorage.setItem("user_pass", pass);
 
   showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
   showToast("Usuario creado");
 
-  // limpiar inputs y volver a login después de un pequeño delay visual
   setTimeout(() => {
     [emailEl, passEl, pass2El].forEach(i => { i.value = ""; markInputError(i, false); });
     registerContainer.classList.add("hidden");
@@ -126,7 +124,7 @@ document.getElementById("registerBtn").onclick = () => {
   }, 900);
 };
 
-/* Login */
+// Comienzo de la parte login
 document.getElementById("loginBtn").onclick = () => {
   clearFormMessages();
 
@@ -151,7 +149,6 @@ document.getElementById("loginBtn").onclick = () => {
     showFormMessage(loginMessage, "Accediendo...", "success", 800);
     showToast("Bienvenido");
 
-    // limpiar y navegar a cámara
     setTimeout(() => {
       loginContainer.classList.add("hidden");
       registerContainer.classList.add("hidden");
@@ -167,7 +164,7 @@ document.getElementById("loginBtn").onclick = () => {
   }
 };
 
-/* ==== CÁMARA ==== */
+// Principio de parte de camara
 
 const video = document.getElementById("camera");
 const canvas = document.getElementById("snapshot");
@@ -184,13 +181,12 @@ async function initCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
-    // Mostrar cámara cuando está lista
+    // Mostrar camara cuando está lista
     cameraLoading.classList.add("hidden");
     cameraContainer.classList.remove("hidden");
 
     video.srcObject = stream;
   } catch (err) {
-    // en vez de alert: mostramos en la página
     showToast("No se pudo acceder a la cámara");
     captionText.textContent = "No se pudo acceder a la cámara.";
   }
@@ -232,8 +228,6 @@ async function sendImageToBackend(imageBlob) {
     captionText.textContent = "Error: " + err.message;
   }
 }
-
-/* ==== EVENTOS ==== */
 
 captureBtn.addEventListener("click", captureImage);
 uploadBtn.addEventListener("click", () => fileInput.click());
