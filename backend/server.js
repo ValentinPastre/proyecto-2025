@@ -12,15 +12,19 @@ app.use(cors());
 const upload = multer({ dest: "uploads/" });
 
 // BLIP API URL
-const CAPTION_API_URL = process.env.CAPTION_API_URL || "http://localhost:8000/caption";
+// URL de fallback correcta
+const CAPTION_API_URL = process.env.CAPTION_API_URL || "http://captioning:3000/caption";
 
-app.post("/api/caption", upload.single("video"), async (req, res) => {
+// Multer espera el campo "file" 
+app.post("/api/caption", upload.single("file"), async (req, res) => {
+    let imgPath; // Definir imgPath aquí para usarlo en finally
+    
     try {
         if (!req.file) {
             return res.status(400).json({ error: "No file received" });
         }
 
-        const imgPath = req.file.path;
+        imgPath = req.file.path; // Asignar el path
 
         const formData = new FormData();
         formData.append("file", fs.createReadStream(imgPath));
@@ -29,7 +33,12 @@ app.post("/api/caption", upload.single("video"), async (req, res) => {
             headers: formData.getHeaders(),
         });
 
-        fs.unlinkSync(imgPath); // borrar archivo temporal
+        //  Definir la variable 'captionText' 
+        const captionText = response.data.caption;
+
+        // Borrar archivo temporal después de usarlo
+        fs.unlinkSync(imgPath); 
+        imgPath = null; // Marcar como borrado
 
         const ttsResponse = await axios.post(process.env.TTS_API_URL, {
             text: captionText,
@@ -47,9 +56,12 @@ app.post("/api/caption", upload.single("video"), async (req, res) => {
         return res.status(500).json({ error: "Captioning/TTS failed" });
 
     } finally {
-        fs.unlink(imgPath, (err) => {
-            if (err) console.error("Error deleting temp file:", err);
-        });
+        // Asegurarse de borrar el archivo si hubo un error antes
+        if (imgPath) {
+            fs.unlink(imgPath, (err) => {
+                if (err) console.error("Error deleting temp file in finally:", err);
+            });
+        }
     }
 });
 

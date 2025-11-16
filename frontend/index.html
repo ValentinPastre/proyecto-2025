@@ -8,27 +8,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visión Asistida</title>
+  <title>Visión Asistida - Login</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Visión Asistida</h1>
 
-  <div class="camera-container">
-    <video id="camera" autoplay playsinline></video>
-    <canvas id="snapshot"></canvas>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <!-- Uso wrapper para centrar login y registro -->
+  <div class="auth-wrapper">
+
+    <!-- Comienzo de login -->
+    <div id="loginContainer" class="container" aria-live="polite">
+      <h1 class="title">Iniciar Sesión</h1>
+
+      <div id="loginMessage" class="form-message" aria-live="polite"></div>
+
+      <label for="loginEmail" class="hidden-label">Email</label>
+      <input id="loginEmail" type="email" placeholder="Email" class="input" autocomplete="email" />
+
+      <label for="loginPassword" class="hidden-label">Contraseña</label>
+      <input id="loginPassword" type="password" placeholder="Contraseña" class="input" autocomplete="current-password" />
+
+      <button id="loginBtn" class="btn">Entrar</button>
+
+      <p class="switchText">
+        ¿No tenés cuenta? <span id="goRegister" class="switchLink">Registrate</span>
+      </p>
+    </div>
+
+    <!-- Comienzo de registro -->
+    <div id="registerContainer" class="container hidden" aria-live="polite">
+      <h1 class="title">Registrarse</h1>
+
+      <div id="registerMessage" class="form-message" aria-live="polite"></div>
+
+      <label for="regEmail" class="hidden-label">Email</label>
+      <input id="regEmail" type="email" placeholder="Email" class="input" autocomplete="email" />
+
+      <label for="regPassword" class="hidden-label">Contraseña</label>
+      <input id="regPassword" type="password" placeholder="Contraseña" class="input" autocomplete="new-password" />
+
+      <label for="regPassword2" class="hidden-label">Repetir Contraseña</label>
+      <input id="regPassword2" type="password" placeholder="Repetir contraseña" class="input" autocomplete="new-password" />
+
+      <button id="registerBtn" class="btn">Crear Cuenta</button>
+
+      <p class="switchText">
+        ¿Ya tenés cuenta? <span id="goLogin" class="switchLink">Iniciar sesión</span>
+      </p>
+    </div>
+
   </div>
 
-  <div class="controls">
-    <button id="captureBtn">Capturar</button>
-    <button id="uploadBtn">Subir imagen</button>
-    <input type="file" id="fileInput" accept="image/*" hidden />
-  </div>
+  <!-- Comienzo de la camara -->
+  <div id="cameraPage" class="hidden camera-page">
+    <h1 class="title">Visión Asistida</h1>
 
-  <div class="result">
-    <h2>Resultado:</h2>
-    <p id="captionText">Esperando imagen...</p>
-    <audio id="audioPlayer" controls></audio>
+    <div id="cameraLoading">Cargando cámara...</div>
+
+    <div class="camera-container hidden" id="cameraContainer">
+      <video id="camera" autoplay playsinline></video>
+      <canvas id="snapshot"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="captureBtn" class="btn">Capturar</button>
+      <button id="uploadBtn" class="btn btn-secondary">Subir imagen</button>
+      <input type="file" id="fileInput" accept="image/*" hidden />
+    </div>
+
+    <div class="result">
+      <h2>Resultado:</h2>
+      <p id="captionText">Esperando imagen...</p>
+      <audio id="audioPlayer" controls></audio>
+    </div>
   </div>
 
   <script src="script.js"></script>
