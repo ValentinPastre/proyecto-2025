@@ -10,4 +10,8 @@ RUN pip install --no-cache-dir -r requirements.tts.txt
 
 COPY . .
 
-CMD ["python", "main.py"]
+# Expone el puerto que usará el contenedor
+EXPOSE 8002
+
+# Comando para iniciar el servidor Uvicorn en el puerto 8002
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
