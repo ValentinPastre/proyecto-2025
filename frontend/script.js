@@ -210,19 +210,21 @@ async function sendImageToBackend(imageBlob) {
   formData.append("file", imageBlob, "image.jpg");
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/analyze", {
+    // URL apunta al backend (puerto 3000) y ruta correcta 
+    const response = await fetch("http://127.0.0.1:3000/api/caption", {
       method: "POST",
       body: formData
     });
 
-if (!response.ok) throw new Error("Error del servidor");
+    if (!response.ok) throw new Error("Error del servidor");
 
     const data = await response.json();
 
-    captionText.textContent = data.caption || "Sin descripción.";
+    //  Actualizado para usar 'objects' (según tu server.js) 
+    captionText.textContent = data.objects || "Sin descripción.";
 
-    if (data.audio_url) {
-      audioPlayer.src = data.audio_url;
+    if (data.audioUrl) { // ⬅️ 'audioUrl' (según tu server.js)
+      audioPlayer.src = data.audioUrl;
       audioPlayer.play();
     }
 
