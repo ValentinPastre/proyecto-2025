@@ -3,7 +3,7 @@
     la disposición de los elementos, colores y tipografía. 
     Se aplican estilos a los IDs definidos en index.html        */
     
-/* Reset y mejor manejo de medidas */
+
 * {
   box-sizing: border-box;
 }
@@ -46,13 +46,13 @@ body {
   animation: fadeIn 0.3s ease;
 }
 
-/* Animación sutil */
+/* Animacion sutil */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Título */
+/* Titulo */
 .title {
   margin-bottom: 1em;
   font-size: 1.8em;
@@ -94,7 +94,7 @@ body {
   background: #1e40af;
 }
 
-/* Botón secundario */
+/* Boton secundario */
 .btn-secondary {
   background: #6b7280;
 }
@@ -115,7 +115,7 @@ body {
   font-weight: bold;
 }
 
-/* Cámara */
+/* Camara */
 .camera-page {
   text-align: center;
   padding: 2em;
@@ -152,7 +152,6 @@ video, canvas {
   box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
-/* Mensajes dentro del formulario */
 .form-message {
   min-height: 1.4em;
   margin-bottom: 0.6em;
@@ -164,29 +163,26 @@ video, canvas {
   pointer-events: none;
 }
 
-/* mensajes de error/éxito visibles */
+/* mensajes de error/exito visibles */
 .form-message.visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
-/* estilos según tipo */
 .form-message.error {
-  color: #b91c1c; /* rojo */
+  color: #b91c1c;
 }
 
 .form-message.success {
-  color: #047857; /* verde */
+  color: #047857;
 }
 
-/* input con error */
 .input.input-error {
   border-color: #ef4444;
   box-shadow: 0 0 6px rgba(239,68,68,0.12);
 }
 
-/* Toast global (pequeño popup superior) */
 .toast {
   position: fixed;
   top: 18px;
@@ -210,7 +206,7 @@ video, canvas {
   pointer-events: auto;
 }
 
-/* pequeños ajustes para accesibilidad visual */
+/* accesibilidad visual */
 .input[aria-invalid="true"] {
   border-style: solid;
 }
