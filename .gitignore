@@ -29,6 +29,7 @@ api/uploads/
 
 # Captioning outputs
 captioning/outputs/
+captioning/.cache
 
 # TTS outputs
 tts/outputs/
