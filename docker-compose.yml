@@ -41,3 +41,11 @@ services:
       - ./tts/outputs:/app/outputs
     command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
     # También aplicar CORS como en captioning si es necesario
+  sqlite:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    containar_name: proyecto-2025-sqlite
+    volumes:
+      - ./database/db:/data
+    command: /data/database.sqlite3
