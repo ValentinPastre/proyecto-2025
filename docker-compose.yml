@@ -1,15 +1,43 @@
 version: "3.9"
 
 services:
-  app:
-    build: .
-    container_name: yolo_detection_app
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: proyecto-2025-frontend
     ports:
-      - "3000:3000"       # Mapea el puerto del contenedor al host
-    volumes:
-      - ./models:/app/models         # Para que los modelos estén accesibles
-      - ./api/uploads:/app/api/uploads # Carpeta para archivos subidos
-      - ./frontend:/app/frontend     # Carpeta frontend
+      - "8080:80"
+    depends_on:
+      - captioning
+      - tts
+    environment:
+      - CAPTIONING_URL=http://captioning:3000/caption
+      - TTS_URL=http://tts:8002/tts
+
+  captioning:
+    build:
+      context: ./captioning
+      dockerfile: Dockerfile
+    container_name: proyecto-2025-captioning
+    ports:
+      - "3000:3000"
     environment:
       - PYTHONUNBUFFERED=1
-    restart: unless-stopped
+    volumes:
+      - ./captioning/outputs:/app/outputs
+    command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
+    
+  tts:
+    build:
+      context: ./tts
+      dockerfile: Dockerfile
+    container_name: proyecto-2025-tts
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./tts/outputs:/app/outputs
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+    # También aplicar CORS como en captioning si es necesario

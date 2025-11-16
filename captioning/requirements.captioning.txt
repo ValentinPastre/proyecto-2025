@@ -1,0 +1,6 @@
+-r requirements.base.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2
+transformers==4.39.3
+Pillow
+deep-translator
