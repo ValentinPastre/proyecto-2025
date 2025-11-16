@@ -206,7 +206,7 @@ video, canvas {
   pointer-events: auto;
 }
 
-/* accesibiliddvisual */
+/* accesibilidad visual */
 .input[aria-invalid="true"] {
   border-style: solid;
 }
