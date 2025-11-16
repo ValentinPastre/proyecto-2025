@@ -72,7 +72,7 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-document.getElementById("registerBtn").onclick = () => {
+document.getElementById("registerBtn").onclick = async () => {
   clearFormMessages();
 
   const emailEl = document.getElementById("regEmail");
@@ -109,23 +109,33 @@ document.getElementById("registerBtn").onclick = () => {
     return showFormMessage(registerMessage, "Las contraseñas no coinciden", "error");
   }
 
-  // Guardado local (cambiar  con una base de datos luego)
-  localStorage.setItem("user_email", email);
-  localStorage.setItem("user_pass", pass);
+  try {
+    const res = await fetch("http://127.0.0.1:3000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass })
+    });
 
-  showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
-  showToast("Usuario creado");
+    const data = await res.json();
 
-  setTimeout(() => {
-    [emailEl, passEl, pass2El].forEach(i => { i.value = ""; markInputError(i, false); });
-    registerContainer.classList.add("hidden");
-    loginContainer.classList.remove("hidden");
-    clearFormMessages();
-  }, 900);
+    if (!res.ok) throw new Error(data.message || "Error en registro");
+
+    showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
+    showToast("Usuario creado");
+
+    setTimeout(() => {
+	[emailEl, passEl, pass2El].forEach(i => { i.value = ""; markInputError(i, false); });
+	registerContainer.classList.add("hidden");
+	loginContainer.classList.remove("hidden");
+	clearFormMessages();
+    }, 900);
+  } catch (err) {
+    showFormMessage(registerMessage, err.message, "error");
+  }
 };
 
 // Comienzo de la parte login
-document.getElementById("loginBtn").onclick = () => {
+document.getElementById("loginBtn").onclick = async () => {
   clearFormMessages();
 
   const emailEl = document.getElementById("loginEmail");
@@ -142,10 +152,20 @@ document.getElementById("loginBtn").onclick = () => {
     return showFormMessage(loginMessage, "Complete email y contraseña", "error");
   }
 
-  const savedEmail = localStorage.getItem("user_email");
-  const savedPass = localStorage.getItem("user_pass");
+  try {
+    const res = await fetch("http://127.0.0.1:3000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass })
+    });
 
-  if (email === savedEmail && pass === savedPass) {
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message || "Error en login");
+
+    const savedEmail = localStorage.getItem("user_email");
+    const savedPass = localStorage.getItem("user_pass");
+
     showFormMessage(loginMessage, "Accediendo...", "success", 800);
     showToast("Bienvenido");
 
@@ -157,10 +177,10 @@ document.getElementById("loginBtn").onclick = () => {
       initCamera();
     }, 600);
 
-  } else {
+  } catch (err) {
     markInputError(emailEl);
     markInputError(passEl);
-    return showFormMessage(loginMessage, "Credenciales incorrectas", "error");
+    return showFormMessage(loginMessage, err.message, "error");
   }
 };
 
