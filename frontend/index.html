@@ -1,27 +1,26 @@
-<!--                       ESTRUCTURA PRINCIPAL                       -->
-<!--    Contiene elementos visibles (botones, video, texto, etc)
-        y los enlaces a script.js (<script src="script.js"></script>)
-        y style.css (<link rel="stylesheet" href="style.css" />)     -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visión Asistida - Login</title>
+  <title>Visión Asistida</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+  <!-- Toast y Logout son globales, están fuera de las "páginas" -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <button id="logoutBtn" class="btn btn-logout hidden">Cerrar Sesión</button>
 
-  <!-- Uso wrapper para centrar login y registro -->
-  <div class="auth-wrapper">
+  <!-- Contenedor principal de las páginas -->
+  <main id="app-router">
 
-    <!-- Comienzo de login -->
-    <div id="loginContainer" class="container" aria-live="polite">
+    <!-- 
+      PÁGINA 1: LOGIN 
+      Cambiamos el ID por un 'data-page' para el router
+    -->
+    <div id="page-login" class="container page-container" data-page="login">
       <h1 class="title">Iniciar Sesión</h1>
-
       <div id="loginMessage" class="form-message" aria-live="polite"></div>
 
       <label for="loginEmail" class="hidden-label">Email</label>
@@ -33,14 +32,17 @@
       <button id="loginBtn" class="btn">Entrar</button>
 
       <p class="switchText">
-        ¿No tenés cuenta? <span id="goRegister" class="switchLink">Registrate</span>
+        ¿No tenés cuenta? 
+        <!-- MODIFICADO: Ahora es un link de ancla (hash) -->
+        <a href="#register" class="switchLink">Registrate</a>
       </p>
     </div>
 
-    <!-- Comienzo de registro -->
-    <div id="registerContainer" class="container hidden" aria-live="polite">
+    <!-- 
+      PÁGINA 2: REGISTRO 
+    -->
+    <div id="page-register" class="container page-container" data-page="register">
       <h1 class="title">Registrarse</h1>
-
       <div id="registerMessage" class="form-message" aria-live="polite"></div>
 
       <label for="regEmail" class="hidden-label">Email</label>
@@ -55,36 +57,45 @@
       <button id="registerBtn" class="btn">Crear Cuenta</button>
 
       <p class="switchText">
-        ¿Ya tenés cuenta? <span id="goLogin" class="switchLink">Iniciar sesión</span>
+        ¿Ya tenés cuenta? 
+        <!-- MODIFICADO: Ahora es un link de ancla (hash) -->
+        <a href="#login" class="switchLink">Iniciar sesión</a>
       </p>
     </div>
 
-  </div>
+    <!-- 
+      PÁGINA 3: CÁMARA 
+      Aplicamos los mismos estilos de layout de la vez pasada
+    -->
+    <div id="page-camera" class="container page-container camera-layout" data-page="camera">
+      <h1 class="title">Visión Asistida</h1>
 
-  <!-- Comienzo de la camara -->
-  <div id="cameraPage" class="hidden camera-page">
-    <h1 class="title">Visión Asistida</h1>
+      <div id="cameraLoading">Cargando cámara...</div>
 
-    <div id="cameraLoading">Cargando cámara...</div>
+      <div class="camera-container hidden" id="cameraContainer">
+        <video id="camera" autoplay playsinline></video>
+        <canvas id="snapshot"></canvas>
+      </div>
 
-    <div class="camera-container hidden" id="cameraContainer">
-      <video id="camera" autoplay playsinline></video>
-      <canvas id="snapshot"></canvas>
+      <div class="controls">
+        <button id="captureBtn" class="btn">Capturar</button>
+        <button id="uploadBtn" class="btn btn-secondary">Subir imagen</button>
+        <input type="file" id="fileInput" accept="image/*" hidden />
+      </div>
+
+      <div class="result">
+        <h2>Resultado:</h2>
+        <p id="captionText">Esperando imagen...</p>
+        <audio id="audioPlayer" controls></audio>
+      </div>
     </div>
 
-    <div class="controls">
-      <button id="captureBtn" class="btn">Capturar</button>
-      <button id="uploadBtn" class="btn btn-secondary">Subir imagen</button>
-      <input type="file" id="fileInput" accept="image/*" hidden />
-    </div>
+  </main>
 
-    <div class="result">
-      <h2>Resultado:</h2>
-      <p id="captionText">Esperando imagen...</p>
-      <audio id="audioPlayer" controls></audio>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
+  <!-- 
+    MODIFICADO: 'defer' hace que el script se ejecute 
+    después de que el HTML esté listo 
+  -->
+  <script src="script.js" defer></script>
 </body>
 </html>
