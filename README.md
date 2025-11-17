@@ -76,8 +76,3 @@ La aplicación completa se ejecuta mediante Docker Compose.
 
     docker-compose down
     o CTRL + C
-    
-## 📌 TO DO
-
--   Mejorar interfaz del frontend
--   Subir la base de datos
