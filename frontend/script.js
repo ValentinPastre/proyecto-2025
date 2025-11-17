@@ -2,7 +2,10 @@
 const logoutBtn = document.getElementById("logoutBtn");
 const toast = document.getElementById("toast");
 
-// Selectores de Páginas
+// URLs del Backend (Configurables)
+const API_URL = "http://127.0.0.1:3000/api";
+
+// Selectores de Páginas (Contenedores)
 const pages = document.querySelectorAll(".page-container");
 const pageLogin = document.getElementById("page-login");
 const pageRegister = document.getElementById("page-register");
@@ -34,6 +37,7 @@ const cameraContainer = document.getElementById("cameraContainer");
 
 /* --- Lógica de Ruteo (Vistas) --- */
 
+// Obtiene el usuario guardado en la sesión del navegador
 function getCurrentUser() {
   const userString = sessionStorage.getItem('currentUser');
   return userString ? JSON.parse(userString) : null;
@@ -43,29 +47,28 @@ function getCurrentUser() {
  * Maneja el cambio de ruta, muestra la página correcta y protege las rutas.
  */
 function handleRouteChange() {
-  const hash = window.location.hash || '#login'; // Default a #login
+  const hash = window.location.hash || '#login'; // Por defecto a login
   const user = getCurrentUser();
 
   let targetPage = hash;
 
-  // Lógica de protección de rutas
+  // Protección de rutas: Si no hay usuario, forzar login
   if (hash === '#camera' && !user) {
-    targetPage = '#login'; // No está logueado, no puede ver la cámara
+    targetPage = '#login';
     showToast("Debes iniciar sesión primero");
   } else if ((hash === '#login' || hash === '#register') && user) {
-    targetPage = '#camera'; // Ya está logueado, no debe ver login/register
+    targetPage = '#camera'; // Si ya está logueado, ir directo a cámara
   } else if (hash === '#logout') {
-    targetPage = '#login'; // Se está deslogueando
+    targetPage = '#login';
   }
 
-  // Actualizar la URL si fue redirigido
+  // Actualizar hash si hubo redirección
   if (window.location.hash !== targetPage) {
     window.location.hash = targetPage;
-    // No continuamos, el cambio de hash disparará esta función de nuevo
     return;
   }
 
-  // Mostrar la página correcta
+  // Activar la página correspondiente
   let pageFound = false;
   pages.forEach(page => {
     if (page.dataset.page === targetPage.substring(1)) {
@@ -76,33 +79,33 @@ function handleRouteChange() {
     }
   });
 
-  // Página por defecto si el hash es inválido
+  // Fallback si la página no existe
   if (!pageFound) {
     pageLogin.classList.add('active');
     window.location.hash = '#login';
   }
 
-  // Lógica de UI dependiente de la autenticación
+  // UI dependiente de sesión
   if (user) {
-    logoutBtn.classList.remove('hidden');
-    // Si la página es la cámara, la iniciamos
+    if(logoutBtn) logoutBtn.classList.remove('hidden');
     if (targetPage === '#camera') {
       initCamera();
     }
   } else {
-    logoutBtn.classList.add('hidden');
+    if(logoutBtn) logoutBtn.classList.add('hidden');
   }
 }
 
-// Escuchadores de eventos para el ruteo
+// Escuchadores para navegación
 window.addEventListener('hashchange', handleRouteChange);
 window.addEventListener('DOMContentLoaded', handleRouteChange);
 
 
-/* --- Lógica de Autenticación --- */
+/* --- Lógica de Autenticación (CONECTADA A BASE DE DATOS) --- */
 
+// REGISTRO
 if (registerBtn) {
-  registerBtn.onclick = () => {
+  registerBtn.onclick = async () => {
     clearFormMessages();
     const email = regEmailEl.value.trim();
     const pass = regPassEl.value;
@@ -110,6 +113,7 @@ if (registerBtn) {
 
     [regEmailEl, regPassEl, regPass2El].forEach(i => markInputError(i, false));
 
+    // Validaciones Frontend
     if (!email || !pass || !pass2) {
       if (!email) markInputError(regEmailEl);
       if (!pass) markInputError(regPassEl);
@@ -130,21 +134,36 @@ if (registerBtn) {
       return showFormMessage(registerMessage, "Las contraseñas no coinciden", "error");
     }
 
-    // Simulación de DB
-    localStorage.setItem(`user_${email}`, pass);
+    // --- FETCH AL BACKEND (Registro) ---
+    try {
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pass })
+      });
 
-    showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
-    showToast("Usuario creado");
+      const data = await res.json();
 
-    setTimeout(() => {
-      [regEmailEl, regPassEl, regPass2El].forEach(i => { i.value = ""; markInputError(i, false); });
-      window.location.hash = '#login'; // Navegar a login
-    }, 900);
+      if (!res.ok) throw new Error(data.message || "Error en el registro");
+
+      showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
+      showToast("Usuario creado correctamente");
+
+      // Redirigir al login después de 1 segundo
+      setTimeout(() => {
+        [regEmailEl, regPassEl, regPass2El].forEach(i => { i.value = ""; markInputError(i, false); });
+        window.location.hash = '#login'; 
+      }, 1000);
+
+    } catch (err) {
+      showFormMessage(registerMessage, err.message, "error");
+    }
   };
 }
 
+// LOGIN
 if (loginBtn) {
-  loginBtn.onclick = () => {
+  loginBtn.onclick = async () => {
     clearFormMessages();
     const email = loginEmailEl.value.trim();
     const pass = loginPassEl.value;
@@ -157,54 +176,64 @@ if (loginBtn) {
       return showFormMessage(loginMessage, "Complete email y contraseña", "error");
     }
 
-    const savedPass = localStorage.getItem(`user_${email}`);
+    // --- FETCH AL BACKEND (Login) ---
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pass })
+      });
 
-    if (pass === savedPass) {
-      const MOCK_USER = {
-        id: `usr_${Math.random().toString(36).substr(2, 9)}`,
-        email: email
-      };
-      sessionStorage.setItem('currentUser', JSON.stringify(MOCK_USER));
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Credenciales incorrectas");
+
+      // GUARDAR SESIÓN
+      // Asumimos que el backend devuelve algo como { message: "ok", user: { id: 1, email: "..." } }
+      // Si el backend solo devuelve éxito, creamos un objeto usuario básico con lo que tenemos.
+      const userToSave = data.user || { email: email, id: data.userId || 'unknown' };
+      sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
 
       showFormMessage(loginMessage, "Accediendo...", "success", 800);
-      showToast(`Bienvenido, ${email}`);
+      showToast(`Bienvenido, ${userToSave.email}`);
 
       setTimeout(() => {
         window.location.hash = '#camera'; // Navegar a la cámara
         clearFormMessages();
       }, 600);
 
-    } else {
+    } catch (err) {
       markInputError(loginEmailEl);
       markInputError(loginPassEl);
-      return showFormMessage(loginMessage, "Credenciales incorrectas", "error");
+      showFormMessage(loginMessage, err.message, "error");
     }
   };
 }
 
+// LOGOUT
 if (logoutBtn) {
   logoutBtn.onclick = () => {
     sessionStorage.removeItem('currentUser');
     showToast("Sesión cerrada");
-    window.location.hash = '#login'; // Navegar a login
     
-    // Limpiar inputs
-    if(loginEmailEl) loginEmailEl.value = "";
-    if(loginPassEl) loginPassEl.value = "";
-    
-    // Detener la cámara si está activa
+    // Detener cámara
     if (video && video.srcObject) {
       video.srcObject.getTracks().forEach(track => track.stop());
       video.srcObject = null;
     }
+    
+    // Limpiar campos
+    if(loginEmailEl) loginEmailEl.value = "";
+    if(loginPassEl) loginPassEl.value = "";
+
+    window.location.hash = '#login'; 
   };
 }
 
 
-/* ==== Lógica de Cámara ==== */
+/* ==== Lógica de Cámara (CONECTADA A BASE DE DATOS) ==== */
 
 async function initCamera() {
-  // Evitar reiniciar la cámara si ya está activa
   if (!video || video.srcObject) return; 
   
   try {
@@ -214,7 +243,7 @@ async function initCamera() {
     video.srcObject = stream;
   } catch (err) {
     showToast("No se pudo acceder a la cámara");
-    if(captionText) captionText.textContent = "No se pudo acceder a la cámara.";
+    if(captionText) captionText.textContent = "Error: No se detecta cámara.";
   }
 }
 
@@ -233,20 +262,17 @@ async function sendImageToBackend(imageBlob) {
   const formData = new FormData();
   formData.append("file", imageBlob, "image.jpg");
 
-  // --- AYUDA PARA TU AMIGO (BASE DE DATOS) ---
+  // Agregar ID de usuario si existe en sesión
   const user = getCurrentUser();
-  if (user) {
+  if (user && user.id) {
     formData.append('userId', user.id);
-    console.log(`Enviando imagen para el usuario: ${user.id}`);
   } else {
-    console.warn("No se encontró usuario en la sesión.");
-    window.location.hash = '#login'; // Si se pierde la sesión, volver a login
-    return;
+    // Si por alguna razón se perdió la sesión
+    console.warn("Usuario no autenticado al enviar imagen");
   }
-  // ------------------------------------------
 
   try {
-    const response = await fetch("http://127.0.0.1:3000/api/caption", {
+    const response = await fetch(`${API_URL}/caption`, {
       method: "POST",
       body: formData
     });
@@ -256,20 +282,25 @@ async function sendImageToBackend(imageBlob) {
       try {
         const errorData = await response.json();
         errorMsg = errorData.error || errorMsg;
-      } catch (e) { /* No hacer nada */ }
+      } catch (e) {}
       throw new Error(errorMsg);
     }
 
     const data = await response.json();
-    if(captionText) captionText.textContent = data.objects || "Sin descripción.";
+    
+    // Mostrar descripción (soporta campo 'objects' o 'caption')
+    captionText.textContent = data.objects || data.caption || "Descripción generada.";
 
+    // Reproducir audio
     if (data.audioUrl && audioPlayer) {
-      audioPlayer.src = data.audioUrl;
-      audioPlayer.play();
+      // Añadir timestamp para evitar caché del navegador si el nombre es igual
+      audioPlayer.src = `${data.audioUrl}?t=${new Date().getTime()}`;
+      audioPlayer.play().catch(e => console.log("Error al reproducir audio:", e));
     }
 
   } catch (err) {
     if(captionText) captionText.textContent = "Error: " + err.message;
+    console.error(err);
   }
 }
 
@@ -329,191 +360,3 @@ function markInputError(inputEl, flag = true) {
 function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
-
-document.getElementById("registerBtn").onclick = async () => {
-  clearFormMessages();
-
-  const emailEl = document.getElementById("regEmail");
-  const passEl = document.getElementById("regPassword");
-  const pass2El = document.getElementById("regPassword2");
-
-  const email = emailEl.value.trim();
-  const pass = passEl.value;
-  const pass2 = pass2El.value;
-
-  // reset marks
-  [emailEl, passEl, pass2El].forEach(i => markInputError(i, false));
-
-  if (!email || !pass || !pass2) {
-    if (!email) markInputError(emailEl);
-    if (!pass) markInputError(passEl);
-    if (!pass2) markInputError(pass2El);
-    return showFormMessage(registerMessage, "Complete todos los campos", "error");
-  }
-
-  if (!validateEmail(email)) {
-    markInputError(emailEl);
-    return showFormMessage(registerMessage, "Ingrese un email válido", "error");
-  }
-
-  if (pass.length < 6) {
-    markInputError(passEl);
-    return showFormMessage(registerMessage, "La contraseña debe tener al menos 6 caracteres", "error");
-  }
-
-  if (pass !== pass2) {
-    markInputError(passEl, true);
-    markInputError(pass2El, true);
-    return showFormMessage(registerMessage, "Las contraseñas no coinciden", "error");
-  }
-
-  try {
-    const res = await fetch("http://127.0.0.1:3000/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: pass })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.message || "Error en registro");
-
-    showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
-    showToast("Usuario creado");
-
-    setTimeout(() => {
-	[emailEl, passEl, pass2El].forEach(i => { i.value = ""; markInputError(i, false); });
-	registerContainer.classList.add("hidden");
-	loginContainer.classList.remove("hidden");
-	clearFormMessages();
-    }, 900);
-  } catch (err) {
-    showFormMessage(registerMessage, err.message, "error");
-  }
-};
-
-// Comienzo de la parte login
-document.getElementById("loginBtn").onclick = async () => {
-  clearFormMessages();
-
-  const emailEl = document.getElementById("loginEmail");
-  const passEl = document.getElementById("loginPassword");
-
-  const email = emailEl.value.trim();
-  const pass = passEl.value;
-
-  [emailEl, passEl].forEach(i => markInputError(i, false));
-
-  if (!email || !pass) {
-    if (!email) markInputError(emailEl);
-    if (!pass) markInputError(passEl);
-    return showFormMessage(loginMessage, "Complete email y contraseña", "error");
-  }
-
-  try {
-    const res = await fetch("http://127.0.0.1:3000/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: pass })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.message || "Error en login");
-
-    const savedEmail = localStorage.getItem("user_email");
-    const savedPass = localStorage.getItem("user_pass");
-
-    showFormMessage(loginMessage, "Accediendo...", "success", 800);
-    showToast("Bienvenido");
-
-    setTimeout(() => {
-      loginContainer.classList.add("hidden");
-      registerContainer.classList.add("hidden");
-      cameraPage.classList.remove("hidden");
-      clearFormMessages();
-      initCamera();
-    }, 600);
-
-  } catch (err) {
-    markInputError(emailEl);
-    markInputError(passEl);
-    return showFormMessage(loginMessage, err.message, "error");
-  }
-};
-
-// Principio de parte de camara
-
-const video = document.getElementById("camera");
-const canvas = document.getElementById("snapshot");
-const captureBtn = document.getElementById("captureBtn");
-const uploadBtn = document.getElementById("uploadBtn");
-const fileInput = document.getElementById("fileInput");
-const captionText = document.getElementById("captionText");
-const audioPlayer = document.getElementById("audioPlayer");
-
-const cameraLoading = document.getElementById("cameraLoading");
-const cameraContainer = document.getElementById("cameraContainer");
-
-
-
-async function initCamera() {
-try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-    // Mostrar camara cuando está lista
-    cameraLoading.classList.add("hidden");
-    cameraContainer.classList.remove("hidden");
-
-    video.srcObject = stream;
-  } catch (err) {
-    showToast("No se pudo acceder a la cámara");
-    captionText.textContent = "No se pudo acceder a la cámara.";
-  }
-}
-
-function captureImage() {
-const ctx = canvas.getContext("2d");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0);
-
-  canvas.toBlob(sendImageToBackend, "image/jpeg");
-}
-
-async function sendImageToBackend(imageBlob) {
-  captionText.textContent = "Procesando...";
-
-  const formData = new FormData();
-  formData.append("file", imageBlob, "image.jpg");
-
-  try {
-    // URL apunta al backend (puerto 3000) y ruta correcta 
-    const response = await fetch("http://127.0.0.1:3000/api/caption", {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) throw new Error("Error del servidor");
-
-    const data = await response.json();
-
-    //  Actualizado para usar 'objects' (según tu server.js) 
-    captionText.textContent = data.objects || "Sin descripción.";
-
-    if (data.audioUrl) { // ⬅️ 'audioUrl' (según tu server.js)
-      audioPlayer.src = data.audioUrl;
-      audioPlayer.play();
-    }
-
-  } catch (err) {
-    captionText.textContent = "Error: " + err.message;
-  }
-}
-
-captureBtn.addEventListener("click", captureImage);
-uploadBtn.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", () => {
-  const file = fileInput.files[0];
-  if (file) sendImageToBackend(file);
-});
