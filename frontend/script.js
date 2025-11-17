@@ -1,6 +1,19 @@
 /* --- Variables Globales y Selectores --- */
 const logoutBtn = document.getElementById("logoutBtn");
 const toast = document.getElementById("toast");
+const audioCapturarImagen = new Audio("audios-botones/CapturarImagen.wav");
+const audioCerrarSesion = new Audio("audios-botones/CerrarSesion.wav");
+const audioPassword = new Audio("audios-botones/Password.wav");
+const audioEmail = new Audio("audios-botones/Email.wav");
+const audioEntrar = new Audio("audios-botones/Entrar.wav");
+const audioIniciarSesion = new Audio("audios-botones/IniciarSesion.wav");
+const audioRegistrarse = new Audio("audios-botones/Registrarse.wav");
+const audioRepetirPassword = new Audio("audios-botones/RepetirPassword.wav");
+const audioSubirImagen = new Audio("audios-botones/SubirImagen.wav");
+const audioUsuarioNoEncontrado = new Audio("audios-botones/UsuarioNoEncontrado.wav");
+const audioUsuarioYaExiste = new Audio("audios-botones/UsuarioYaExiste.wav");
+const audioCrearCuenta = new Audio("audios-botones/CrearCuenta.wav");
+const audioLogin = new Audio("audios-botones/Login.wav");
 
 // URLs del Backend (Configurables)
 const API_URL = "http://127.0.0.1:3000/api";
@@ -79,6 +92,12 @@ function handleRouteChange() {
     }
   });
 
+  if (targetPage == '#login') {
+		playSound(audioIniciarSesion);
+	} else if (targetPage == '#register') {
+		playSound(audioRegistrarse);
+	}
+
   // Fallback si la página no existe
   if (!pageFound) {
     pageLogin.classList.add('active');
@@ -105,6 +124,10 @@ window.addEventListener('DOMContentLoaded', handleRouteChange);
 
 // REGISTRO
 if (registerBtn) {
+  registerBtn.addEventListener("mouseenter", () => {
+    playSound(audioCrearCuenta);
+  });
+
   registerBtn.onclick = async () => {
     clearFormMessages();
     const email = regEmailEl.value.trim();
@@ -157,12 +180,19 @@ if (registerBtn) {
 
     } catch (err) {
       showFormMessage(registerMessage, err.message, "error");
+
+      if (err.message.toLowerCase().includes("ya existe")) {
+	playSound(audioUsuarioYaExiste);
+      }
     }
   };
 }
 
 // LOGIN
 if (loginBtn) {
+   loginBtn.addEventListener("mouseenter", () => {
+    playSound(audioLogin);
+  })
   loginBtn.onclick = async () => {
     clearFormMessages();
     const email = loginEmailEl.value.trim();
@@ -206,12 +236,21 @@ if (loginBtn) {
       markInputError(loginEmailEl);
       markInputError(loginPassEl);
       showFormMessage(loginMessage, err.message, "error");
+
+      if (err.message.toLowerCase().includes("usuario no encontrado") || err.message.toLowerCase().includes("credenciales incorrectas")) {
+	playSound(audioUsuarioNoEncontrado);
+      }
     }
   };
 }
 
 // LOGOUT
 if (logoutBtn) {
+  logoutBtn.addEventListener("mouseenter", () => {
+    playSound(audioCerrarSesion);
+  });
+
+
   logoutBtn.onclick = () => {
     sessionStorage.removeItem('currentUser');
     showToast("Sesión cerrada");
@@ -305,8 +344,14 @@ async function sendImageToBackend(imageBlob) {
 }
 
 // Eventos de Cámara
-if(captureBtn) captureBtn.addEventListener("click", captureImage);
-if(uploadBtn) uploadBtn.addEventListener("click", () => fileInput.click());
+if(captureBtn) {
+	captureBtn.addEventListener("mouseenter", () => {playSound(audioCapturarImagen);});
+	captureBtn.addEventListener("click", captureImage);
+}
+if(uploadBtn) {
+	uploadBtn.addEventListener("mouseenter", () => {playSound(audioSubirImagen);});
+	uploadBtn.addEventListener("click", () => fileInput.click());
+}
 if(fileInput) fileInput.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (file) sendImageToBackend(file);
@@ -360,3 +405,62 @@ function markInputError(inputEl, flag = true) {
 function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
+
+
+let playCooldown = false;
+function playSound(audio) {
+  if (playCooldown) return;
+  playCooldown = true;
+
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+
+  setTimeout(() => playCooldown = false, 180);
+}
+
+
+const linkRegistrate = document.querySelector('a[href="#register"]');
+if (linkRegistrate) {
+  linkRegistrate.addEventListener("mouseenter", () => {
+    playSound(audioRegistrarse);
+  });
+}
+
+
+const linkIniciarSesion = document.querySelector('a[href="#login"]');
+if (linkIniciarSesion) {
+  linkIniciarSesion.addEventListener("mouseenter", () => {
+    playSound(audioIniciarSesion);
+  });
+}
+
+if (loginEmailEl) {
+  loginEmailEl.addEventListener("focus", () => {
+    playSound(audioEmail);
+  });
+}
+
+if (loginPassEl) {
+  loginPassEl.addEventListener("focus", () => {
+    playSound(audioPassword);
+  });
+}
+
+if (regEmailEl) {
+  regEmailEl.addEventListener("focus", () => {
+    playSound(audioEmail);
+  });
+}
+
+if (regPassEl) {
+  regPassEl.addEventListener("focus", () => {
+    playSound(audioPassword);
+  });
+}
+
+if (regPass2El) {
+  regPass2El.addEventListener("focus", () => {
+    playSound(audioRepetirPassword);
+  });
+}
+
