@@ -1,41 +1,26 @@
 import fs from "fs";
 
-export class OrchestratorController {
-    constructor(captionService, ttsService) {
-        this.captionService = captionService;
-        this.ttsService = ttsService;
+export default class OrchestratorController {
+    constructor(orchestratorService) {
+        this.orchestratorService = orchestratorService;
     }
 
-    async processImage(req, res) {
-        let filePath = null;
+    handle = async (req, res) => {
+        let imgPath = req.file.path;
 
         try {
-            if (!req.file) {
-                return res.status(400).json({ error: "No file received" });
-            }
+            const result = await this.orchestratorService.processImage(imgPath);
 
-            filePath = req.file.path;
+            fs.unlinkSync(imgPath);
 
-            // Obtener caption
-            const captionText = await this.captionService.getCaption(filePath);
-
-            // Obtener audio desde TTS
-            const audioUrl = await this.ttsService.synthesize(captionText);
-
-            // Respuesta
             return res.json({
-                objects: captionText,
+                caption: result.captionText,
                 audioUrl
             });
 
         } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Captioning/TTS failed" });
-
-        } finally {
-            if (filePath) {
-                fs.unlink(filePath, () => {});
-            }
+            console.error("Orchestrator error:", err);
+            return res.status(500).json({ error: "Orchestration failed" });
         }
-    }
+    };
 }

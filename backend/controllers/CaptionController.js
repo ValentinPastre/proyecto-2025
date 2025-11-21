@@ -1,4 +1,6 @@
-export class CaptionController {
+import fs from "fs";
+
+export default class CaptionController {
     constructor(captionService) {
         this.captionService = captionService;
     }
@@ -9,6 +11,8 @@ export class CaptionController {
             const imagePath = req.file.path;
 
             const caption = await this.captionService.caption(imagePath);
+
+            fs.unlinkSync(imagePath);  
 
             return res.json({ caption });
         } catch (err) {

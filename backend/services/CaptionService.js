@@ -1,23 +1,27 @@
-import axios from "axios";
 import fs from "fs";
 import FormData from "form-data";
 
 export default class CaptionService {
-    constructor(captionURL) {
+    constructor(httpClient, captionURL) {
+        this.httpClient = httpClient;
         this.captionURL = captionURL;
     }
 
     async generateCaption(imagePath) {
-        const imageBuffer = fs.readFileSync(imagePath);
+        try {
+            const imageBuffer = fs.createReadStream(imagePath);
 
-        const form = new FormData();
-        form.append("image", imageBuffer, "image.jpg");
+            const form = new FormData();
+            form.append("file", imageBuffer);
 
-        const response = await axios.post(`${this.captionURL}/caption`, form, {
-            headers: form.getHeaders(),
-        });
+            const response = await this.httpClient.post(`${this.captionURL}`, form, {
+                headers: form.getHeaders(),
+            });
 
-        return response.data.caption;
+            return response.data.caption;
+        } catch(err) {
+            console.error("CaptionService.generateCaption error:", err);
+            throw new Error("Caption service failed");
+        }
     }
-
 }
