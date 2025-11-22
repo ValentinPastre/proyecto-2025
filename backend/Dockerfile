@@ -1,14 +1,13 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /app
+RUN mkdir -p /app/data
 
-RUN apk add --no-cache python3 make g++ bash
-
-COPY package*.json ./
-RUN npm install sqlite3 bcrypt
+COPY package*.json ./backend/
+RUN npm install --prefix backend
 
 COPY . .
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

@@ -6,8 +6,6 @@ export default class AuthService {
     }
 
     async register(email, password) {
-        console.log("passwordHasher es:", this.passwordHasher);
-
         const existing = await this.userRepository.findByEmail(email)
         if (existing) throw new Error("Email already registered");
 

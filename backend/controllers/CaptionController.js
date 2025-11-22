@@ -16,7 +16,7 @@ export default class CaptionController {
 
             return res.json({ caption });
         } catch (err) {
-            console.error("Login error", err);
+            console.error("Caption error", err);
             return res.status(500).json({ error: err.message });
         }
     }

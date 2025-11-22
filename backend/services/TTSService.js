@@ -7,7 +7,7 @@ export default class TTSService {
     async generateAudio(text) {
         try {
             const ttsResponse = await this.httpClient.post(
-                `${this.ttsUrl}/speak`, 
+                `${this.ttsUrl}`, 
                 {
                     text,
                     voice: "bm_fable",

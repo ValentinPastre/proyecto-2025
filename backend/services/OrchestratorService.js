@@ -1,6 +1,3 @@
-import fs from "fs";
-import FormData from "form-data";
-
 export default class OrchestratorService{
     constructor(captionService, ttsService) {
         this.captionService = captionService;

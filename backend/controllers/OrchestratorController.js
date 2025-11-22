@@ -9,13 +9,13 @@ export default class OrchestratorController {
         let imgPath = req.file.path;
 
         try {
-            const result = await this.orchestratorService.processImage(imgPath);
+            const { captionText, audioUrl } = await this.orchestratorService.processImage(imgPath);
 
             fs.unlinkSync(imgPath);
 
             return res.json({
-                caption: result.captionText,
-                audioUrl
+                caption: captionText,
+                audioUrl: audioUrl
             });
 
         } catch (err) {

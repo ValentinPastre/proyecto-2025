@@ -9,9 +9,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - backend 
-      - captioning
-      - tts
+      - backend
 
   backend:
     build:
@@ -24,10 +22,12 @@ services:
       - captioning
       - tts
     environment:
+      - JWT_SECRET="supersecret"
       - CAPTION_API_URL=http://captioning:3000/caption
       - TTS_API_URL=http://tts:8002/tts
     volumes:
-      - ./database/db:/app/data
+      - ./data:/app/data
+    
 
   captioning:
     build:

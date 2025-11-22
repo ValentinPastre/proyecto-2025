@@ -159,7 +159,7 @@ if (registerBtn) {
 
     // --- FETCH AL BACKEND (Registro) ---
     try {
-      const res = await fetch(`${API_URL}/register`, {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: pass })
@@ -208,7 +208,7 @@ if (loginBtn) {
 
     // --- FETCH AL BACKEND (Login) ---
     try {
-      const res = await fetch(`${API_URL}/login`, {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: pass })
@@ -311,11 +311,14 @@ async function sendImageToBackend(imageBlob) {
   }
 
   try {
+    console.log("API_URL is:", API_URL);
+
     const response = await fetch(`${API_URL}/caption`, {
       method: "POST",
       body: formData
     });
 
+    
     if (!response.ok) {
       let errorMsg = "Error del servidor";
       try {
@@ -324,11 +327,13 @@ async function sendImageToBackend(imageBlob) {
       } catch (e) {}
       throw new Error(errorMsg);
     }
-
+    
+    console.log("DATA FROM BACKEND:", response);
     const data = await response.json();
     
     // Mostrar descripción (soporta campo 'objects' o 'caption')
     captionText.textContent = data.objects || data.caption || "Descripción generada.";
+
 
     // Reproducir audio
     if (data.audioUrl && audioPlayer) {

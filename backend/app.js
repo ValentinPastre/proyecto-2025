@@ -50,8 +50,8 @@ export function buildApp() {
     // Services
     const authService = new AuthService(userRepository, passwordHasher, jwtAdapter);
 
-    const ttsService = new TTSService(http, process.env.TTS_URL);
-    const captionService = new CaptionService(http, process.env.CAPTION_URL);
+    const ttsService = new TTSService(http, process.env.TTS_API_URL);
+    const captionService = new CaptionService(http, process.env.CAPTION_API_URL);
     const orchestratorService = new OrchestratorService(captionService, ttsService);
 
     // Controllers
