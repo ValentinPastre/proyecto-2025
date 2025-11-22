@@ -1,9 +1,23 @@
+/*
+style.css — Estilos principales de la app
+
+Estructura general:
+- Reset basico
+- Layout del body
+- Paginas login/register/camara controladas por router
+- Controles, botones, inputs
+- Camara responsive (video + canvas)
+- Resultados de caption y audio
+- Toast y mensajes del formulario
+- Accesibilidad visual + feedback
+*/
+
 /* Reset y mejor manejo de medidas */
 * {
   box-sizing: border-box;
 }
 
-/* Body centra todo el contenido */
+/* Layout base */
 body {
   font-family: Arial, sans-serif;
   background: #eef2f7;
@@ -13,27 +27,23 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  overflow-x: hidden; /* Evitar scroll horizontal */
+  overflow-x: hidden; /* Evita scroll horizontal */
 }
 
-/* Ocultar elementos usados para accesibilidad */
+/* Labels que existen solo para accesibilidad */
 .hidden-label {
   position: absolute;
   left: -9999px;
 }
 
-/* Esconder elementos (para toast, etc) */
+/* Utilidad para esconder elementos */
 .hidden {
   display: none !important;
 }
 
-/*
-  NUEVO: Estilo base para todas las "páginas"
-  - 'display: none' por defecto.
-  - La clase '.active' la pondrá el router de JS.
-*/
+/* Pagina base: todas ocultas por defecto, el router activa la visible */
 .page-container {
-  display: none; /* Ocultas por defecto */
+  display: none;
   flex-direction: column;
   align-items: center;
   width: 350px;
@@ -44,16 +54,13 @@ body {
   text-align: center;
 }
 
-/*
-  NUEVO: Regla que muestra la página activa.
-  Usamos flex para que los layouts internos funcionen.
-*/
+/* Pagina activa (via router) */
 .page-container.active {
   display: flex;
   animation: fadeIn 0.3s ease;
 }
 
-/* Estilo para la página de la cámara (mismo de la vez pasada) */
+/* Pagina de camara (mas ancha y con espaciado) */
 .camera-layout {
   width: 95%;
   max-width: 600px;
@@ -61,13 +68,13 @@ body {
   padding: 2em;
 }
 
-/* Animación sutil */
+/* Animacion sutil */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Título */
+/* Titulo general */
 .title {
   margin: 0;
   margin-bottom: 0.5em;
@@ -76,7 +83,7 @@ body {
   font-weight: 600;
 }
 
-/* Inputs */
+/* Inputs estandar */
 .input {
   width: 100%;
   padding: 0.8em;
@@ -93,7 +100,7 @@ body {
   box-shadow: 0 0 4px rgba(37,99,235,0.4);
 }
 
-/* Botones */
+/* Botones principales */
 .btn {
   width: 100%;
   padding: 0.8em;
@@ -111,7 +118,7 @@ body {
   background: #1e40af;
 }
 
-/* Botón secundario */
+/* Boton secundario */
 .btn-secondary {
   background: #6b7280;
 }
@@ -120,30 +127,30 @@ body {
   background: #4b5563;
 }
 
-/* Texto de cambio de formulario */
+/* Texto debajo de formulario */
 .switchText {
   margin-top: 1em;
   font-size: 0.9em;
 }
 
-/* MODIFICADO: Estilos para el link <a> */
+/* Link de cambio login/register */
 .switchLink {
   color: #2563eb;
   cursor: pointer;
   font-weight: bold;
-  text-decoration: none; /* Quitar subrayado */
+  text-decoration: none; 
 }
 .switchLink:hover {
-  text-decoration: underline; /* Subrayar al pasar el mouse */
+  text-decoration: underline; 
 }
 
-
+/* Texto mientras carga la camara */
 #cameraLoading {
   font-size: 1.2em;
   margin: 1em 0;
 }
 
-/* Contenedor de video responsivo */
+/* Contenedor de la camara */
 .camera-container {
   width: 100%;
   max-width: 500px;
@@ -160,7 +167,7 @@ video, canvas {
   background: black;
 }
 
-/* Controles (layout de botones) */
+/* Controles inferiores (capturar / subir) */
 .controls {
   width: 100%;
   display: flex;
@@ -170,7 +177,7 @@ video, canvas {
   margin: 0;
 }
 
-/* Arreglo de botones "largos" */
+/* Botones dentro del area de controles */
 .controls .btn {
   width: auto;
   padding-left: 1.5em;
@@ -178,7 +185,7 @@ video, canvas {
   min-width: 140px;
 }
 
-/* Resultado */
+/* Contenedor del resultado */
 .result {
   background: #f9fafb;
   padding: 1.5em;
@@ -206,7 +213,7 @@ video, canvas {
 }
 
 
-/* --- Mensajes de Formulario y Toast --- */
+/* Mensajes de formulario */
 .form-message {
   min-height: 1.4em;
   margin-bottom: 0.6em;
@@ -234,6 +241,8 @@ video, canvas {
   box-shadow: 0 0 6px rgba(239,68,68,0.12);
   border-style: solid;
 }
+
+/* Toast (notificaciones superiores) */
 .toast {
   position: fixed;
   top: 18px;
@@ -256,7 +265,7 @@ video, canvas {
   pointer-events: auto;
 }
 
-/* Botón de Logout */
+/* Boton flotante de logout */
 .btn-logout {
   position: fixed;
   top: 1.5em;
