@@ -10,8 +10,8 @@ export default class TtsController {
 
             return res.json({ audioUrl });
         } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "TTS failed" });
+            console.error("TTS error:", err);
+            return res.status(500).json({ error: err.message });
         }
     }    
 }

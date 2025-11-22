@@ -10,14 +10,14 @@ export default class CaptionController {
         try {
             const imagePath = req.file.path;
 
-            const caption = await this.captionService.caption(imagePath);
+            const caption = await this.captionService.generateCaption(imagePath);
 
             fs.unlinkSync(imagePath);  
 
             return res.json({ caption });
         } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Captioning failed" });
+            console.error("Login error", err);
+            return res.status(500).json({ error: err.message });
         }
     }
 }

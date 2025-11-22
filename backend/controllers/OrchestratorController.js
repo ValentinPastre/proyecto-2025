@@ -20,7 +20,7 @@ export default class OrchestratorController {
 
         } catch (err) {
             console.error("Orchestrator error:", err);
-            return res.status(500).json({ error: "Orchestration failed" });
+            return res.status(500).json({ error: err.message });
         }
     };
 }

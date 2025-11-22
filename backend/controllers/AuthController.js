@@ -10,7 +10,7 @@ export default class AuthController{
             res.status(201).json(result); //succesfull creation
         } catch (err) {
             console.error("Register error:", err);
-            res.status(400).json({ error: "Registration failed" });
+            res.status(400).json({ error: err.message });
         }
     }
 
@@ -20,7 +20,8 @@ export default class AuthController{
             const token = await this.authService.login(email, password);
             res.json({ token });
         } catch (err) {
-            res.status(400).json({ error: "Login failed" });
+            console.error("Login error:", err);
+            res.status(400).json({ error: err.message });
         }
     }
 }
