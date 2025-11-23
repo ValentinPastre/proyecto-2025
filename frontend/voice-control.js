@@ -55,18 +55,16 @@ class VoiceControl {
             console.error('Error de reconocimiento:', event.error);
             this.onStatusChange('error', event.error);
             
-            // Manejar errores comunes sin spammear
+            // NO reintentar automáticamente para evitar loops
             if (event.error === 'no-speech') {
                 console.log('💡 Tip: Hablá más cerca del micrófono');
-                // Reintentar después de un tiempo más largo
-                setTimeout(() => {
-                    if (this.continuous) this.iniciar();
-                }, 2000);
             } else if (event.error === 'audio-capture') {
                 console.error('❌ No se puede acceder al micrófono. Verificá los permisos.');
             } else if (event.error === 'not-allowed') {
                 console.error('❌ Permiso denegado. Habilitá el micrófono en la configuración del navegador.');
                 this.onStatusChange('not-allowed');
+            } else if (event.error === 'aborted') {
+                console.log('⚠️ Reconocimiento abortado');
             }
         };
 
@@ -140,14 +138,16 @@ class VoiceControl {
             return;
         }
 
+        // Si ya está escuchando, no hacer nada
+        if (this.isListening) {
+            console.log('⚠️ Ya está escuchando');
+            return;
+        }
+
         try {
             this.recognition.start();
         } catch (e) {
             console.error('Error al iniciar:', e);
-            if (e.message.includes('already started')) {
-                this.detener();
-                setTimeout(() => this.iniciar(), 100);
-            }
         }
     }
 
@@ -215,30 +215,40 @@ function inicializarComandosVisionAsistida(voiceControl) {
     }, { descripcion: 'Repetir contraseña en registro' });
 
     voiceControl.registrarComando('iniciar sesión', () => {
+        console.log('🔍 Buscando botón de login...');
         const btn = document.getElementById('loginBtn');
         if (btn && !btn.closest('.page-container').classList.contains('hidden')) {
+            console.log('✓ Botón encontrado, haciendo click');
             btn.click();
+        } else {
+            console.log('❌ Botón no encontrado o página oculta');
         }
     }, { descripcion: 'Hacer clic en Entrar' });
 
     voiceControl.registrarComando('entrar', () => {
+        console.log('🔍 Intentando hacer login...');
         const btn = document.getElementById('loginBtn');
         if (btn && !btn.closest('.page-container').classList.contains('hidden')) {
+            console.log('✓ Presionando botón Entrar');
             btn.click();
+        } else {
+            console.log('❌ No estás en la página de login');
         }
     }, { descripcion: 'Hacer clic en Entrar' });
 
     voiceControl.registrarComando('registrarse', () => {
-        const btn = document.getElementById('registerBtn');
-        if (btn && !btn.closest('.page-container').classList.contains('hidden')) {
-            btn.click();
-        }
-    }, { descripcion: 'Hacer clic en Crear Cuenta' });
+        console.log('🔍 Navegando a página de registro...');
+        window.location.hash = '#register';
+    }, { descripcion: 'Ir a página de registro', prioridad: 8 });
 
     voiceControl.registrarComando('crear cuenta', () => {
+        console.log('🔍 Intentando crear cuenta...');
         const btn = document.getElementById('registerBtn');
         if (btn && !btn.closest('.page-container').classList.contains('hidden')) {
+            console.log('✓ Presionando botón Crear Cuenta');
             btn.click();
+        } else {
+            console.log('❌ No estás en la página de registro');
         }
     }, { descripcion: 'Hacer clic en Crear Cuenta' });
 
