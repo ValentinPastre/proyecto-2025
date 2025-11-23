@@ -1,6 +1,5 @@
 import { $, $$, showToast, showFormMessage, clearFormMessages, markInputError, validateEmail } from '../utils/dom.js';
-import AuthApi from '../api/AuthApi.js';
-import CaptionApi from '../api/CaptionApi.js';
+import BackendApi from '../api/BackendApi.js'
 import CameraService from '../services/CameraService.js';
 import AudioService from '../services/AudioService.js';
 import { blobToFile } from '../utils/fileUtils.js';
@@ -50,8 +49,7 @@ export default class AppController {
     this.cameraContainer = $('#cameraContainer');
 
     // services & apis
-    this.authApi = new AuthApi(this.API_URL);
-    this.captionApi = new CaptionApi(this.API_URL);
+    this.api = new BackendApi(this.API_URL);
     this.cameraService = new CameraService(this.video, this.canvas, this.cameraLoading, this.cameraContainer);
     this.audioService = new AudioService();
 
@@ -188,15 +186,15 @@ export default class AppController {
       if (!email) markInputError(this.regEmailEl);
       if (!pass) markInputError(this.regPassEl);
       if (!pass2) markInputError(this.regPass2El);
-      this.audioService.readText('Complete todos los campos');
+      this.audioService.play('Complete todos los campos');
       return showFormMessage(this.registerMessage, 'Complete todos los campos', 'error');
     }
-    if (!validateEmail(email)) { markInputError(this.regEmailEl); this.audioService.readText('Ingrese un email válido'); return showFormMessage(this.registerMessage, 'Ingrese un email válido', 'error'); }
-    if (pass.length < 6) { markInputError(this.regPassEl); this.audioService.readText('La contraseña debe tener al menos 6 caracteres'); return showFormMessage(this.registerMessage, 'La contraseña debe tener al menos 6 caracteres', 'error'); }
-    if (pass !== pass2) { markInputError(this.regPassEl, true); markInputError(this.regPass2El, true); this.audioService.readText('Las contraseñas no coinciden'); return showFormMessage(this.registerMessage, 'Las contraseñas no coinciden', 'error'); }
+    if (!validateEmail(email)) { markInputError(this.regEmailEl); this.audioService.play('Ingrese un email válido'); return showFormMessage(this.registerMessage, 'Ingrese un email válido', 'error'); }
+    if (pass.length < 6) { markInputError(this.regPassEl); this.audioService.play('La contraseña debe tener al menos 6 caracteres'); return showFormMessage(this.registerMessage, 'La contraseña debe tener al menos 6 caracteres', 'error'); }
+    if (pass !== pass2) { markInputError(this.regPassEl, true); markInputError(this.regPass2El, true); this.audioService.play('Las contraseñas no coinciden'); return showFormMessage(this.registerMessage, 'Las contraseñas no coinciden', 'error'); }
 
     try {
-      await this.authApi.register(email, pass);
+      await this.api.register(email, pass);
       showFormMessage(this.registerMessage, 'Registro exitoso ✔', 'success', 1800);
       showToast(this.toast, 'Usuario creado correctamente');
       this.audioService.play('createAccount');
@@ -208,7 +206,7 @@ export default class AppController {
       showFormMessage(this.registerMessage, err.message, 'error');
       // reproducir sonidos segun mensaje
       if (err.message.toLowerCase().includes('ya existe')) this.audioService.play('userExists');
-      this.audioService.readText(err.message);
+      this.audioService.play(err.message);
     }
   }
 
@@ -225,17 +223,17 @@ export default class AppController {
     if (!email || !pass) {
       if (!email) markInputError(this.loginEmailEl);
       if (!pass) markInputError(this.loginPassEl);
-      this.audioService.readText('Complete email y contraseña');
+      this.audioService.play('Complete email y contraseña');
       return showFormMessage(this.loginMessage, 'Complete email y contraseña', 'error');
     }
 
     try {
-      const data = await this.authApi.login(email, pass);
+      const data = await this.api.login(email, pass);
       const userToSave = data.user || { email, id: data.userId || 'unknown' };
       sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
       showFormMessage(this.loginMessage, 'Accediendo...', 'success', 800);
       showToast(this.toast, `Bienvenido, ${userToSave.email}`);
-      this.audioService.readText(`Bienvenido ${userToSave.email}`);
+      this.audioService.play(`Bienvenido ${userToSave.email}`);
       setTimeout(() => {
         window.location.hash = '#camera';
         clearFormMessages([this.loginMessage]);
@@ -247,7 +245,7 @@ export default class AppController {
       if (err.message.toLowerCase().includes('usuario no encontrado') || err.message.toLowerCase().includes('credenciales incorrectas')) {
         this.audioService.play('userNotFound');
       }
-      this.audioService.readText(err.message);
+      this.audioService.play(err.message);
     }
   }
 
@@ -278,7 +276,7 @@ export default class AppController {
     } catch (err) {
       console.error(err);
       showToast(this.toast, 'Error al capturar');
-      this.audioService.readText('Error al capturar');
+      this.audioService.play('Error al capturar');
     }
   }
 
@@ -308,7 +306,7 @@ export default class AppController {
     if (user && user.id) formData.append('userId', user.id);
 
     try {
-      const data = await this.captionApi.uploadImage(formData);
+      const data = await this.api.uploadImage(formData);
       this.captionText.textContent = data.objects || data.caption || 'Descripción generada.';
       
       if (data.audioUrl || data.audio_url) {
@@ -319,7 +317,7 @@ export default class AppController {
     } catch (err) {
       console.error(err);
       this.captionText.textContent = 'Error: ' + err.message;
-      this.audioService.readText(err.message);
+      this.audioService.play(err.message);
     }
   }
 }
