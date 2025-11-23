@@ -17,6 +17,7 @@ const audioLogin = new Audio("audios-botones/Login.wav");
 
 // URLs del Backend (Configurables)
 const API_URL = "http://127.0.0.1:3000/api";
+const WHISPER_API_URL = "http://127.0.0.1:5000/api"; // API de Whisper
 
 // Selectores de Páginas (Contenedores)
 const pages = document.querySelectorAll(".page-container");
@@ -48,40 +49,36 @@ const audioPlayer = document.getElementById("audioPlayer");
 const cameraLoading = document.getElementById("cameraLoading");
 const cameraContainer = document.getElementById("cameraContainer");
 
-/* --- Lógica de Ruteo (Vistas) --- */
+/* --- Variables para Reconocimiento de Voz --- */
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
 
-// Obtiene el usuario guardado en la sesión del navegador
+/* --- Lógica de Ruteo (Vistas) --- */
 function getCurrentUser() {
   const userString = sessionStorage.getItem('currentUser');
   return userString ? JSON.parse(userString) : null;
 }
 
-/**
- * Maneja el cambio de ruta, muestra la página correcta y protege las rutas.
- */
 function handleRouteChange() {
-  const hash = window.location.hash || '#login'; // Por defecto a login
+  const hash = window.location.hash || '#login';
   const user = getCurrentUser();
-
   let targetPage = hash;
 
-  // Protección de rutas: Si no hay usuario, forzar login
   if (hash === '#camera' && !user) {
     targetPage = '#login';
     showToast("Debes iniciar sesión primero");
   } else if ((hash === '#login' || hash === '#register') && user) {
-    targetPage = '#camera'; // Si ya está logueado, ir directo a cámara
+    targetPage = '#camera';
   } else if (hash === '#logout') {
     targetPage = '#login';
   }
 
-  // Actualizar hash si hubo redirección
   if (window.location.hash !== targetPage) {
     window.location.hash = targetPage;
     return;
   }
 
-  // Activar la página correspondiente
   let pageFound = false;
   pages.forEach(page => {
     if (page.dataset.page === targetPage.substring(1)) {
@@ -92,41 +89,37 @@ function handleRouteChange() {
     }
   });
 
-  if (targetPage == '#login') {
-		playSound(audioIniciarSesion);
-	} else if (targetPage == '#register') {
-		playSound(audioRegistrarse);
-	}
+  if (targetPage == '#login') playSound(audioIniciarSesion);
+  else if (targetPage == '#register') playSound(audioRegistrarse);
 
-  // Fallback si la página no existe
   if (!pageFound) {
     pageLogin.classList.add('active');
     window.location.hash = '#login';
   }
 
-  // UI dependiente de sesión
   if (user) {
     if(logoutBtn) logoutBtn.classList.remove('hidden');
-    if (targetPage === '#camera') {
-      initCamera();
-    }
+    if (targetPage === '#camera') initCamera();
   } else {
     if(logoutBtn) logoutBtn.classList.add('hidden');
   }
 }
 
-// Escuchadores para navegación
 window.addEventListener('hashchange', handleRouteChange);
-window.addEventListener('DOMContentLoaded', handleRouteChange);
+window.addEventListener('DOMContentLoaded', async () => {
+  handleRouteChange();
+try {
+  await initVoiceRecognition();
+} catch (error) {
+  // Silenciar el error de Whisper si no está disponible
+  console.log('ℹ️ Whisper API no disponible, usando solo Web Speech API');
+}
+});
 
-
-/* --- Lógica de Autenticación (CONECTADA A BASE DE DATOS) --- */
-
+/* --- Lógica de Autenticación --- */
 // REGISTRO
 if (registerBtn) {
-  registerBtn.addEventListener("mouseenter", () => {
-    playSound(audioCrearCuenta);
-  });
+  registerBtn.addEventListener("mouseenter", () => playSound(audioCrearCuenta));
 
   registerBtn.onclick = async () => {
     clearFormMessages();
@@ -136,7 +129,6 @@ if (registerBtn) {
 
     [regEmailEl, regPassEl, regPass2El].forEach(i => markInputError(i, false));
 
-    // Validaciones Frontend
     if (!email || !pass || !pass2) {
       if (!email) markInputError(regEmailEl);
       if (!pass) markInputError(regPassEl);
@@ -157,7 +149,6 @@ if (registerBtn) {
       return showFormMessage(registerMessage, "Las contraseñas no coinciden", "error");
     }
 
-    // --- FETCH AL BACKEND (Registro) ---
     try {
       const res = await fetch(`${API_URL}/register`, {
         method: "POST",
@@ -169,10 +160,9 @@ if (registerBtn) {
 
       if (!res.ok) throw new Error(data.message || "Error en el registro");
 
-      showFormMessage(registerMessage, "Registro exitoso ✔", "success", 1800);
+      showFormMessage(registerMessage, "Registro exitoso ✓", "success", 1800);
       showToast("Usuario creado correctamente");
 
-      // Redirigir al login después de 1 segundo
       setTimeout(() => {
         [regEmailEl, regPassEl, regPass2El].forEach(i => { i.value = ""; markInputError(i, false); });
         window.location.hash = '#login'; 
@@ -180,19 +170,14 @@ if (registerBtn) {
 
     } catch (err) {
       showFormMessage(registerMessage, err.message, "error");
-
-      if (err.message.toLowerCase().includes("ya existe")) {
-	playSound(audioUsuarioYaExiste);
-      }
+      if (err.message.toLowerCase().includes("ya existe")) playSound(audioUsuarioYaExiste);
     }
   };
 }
 
 // LOGIN
 if (loginBtn) {
-   loginBtn.addEventListener("mouseenter", () => {
-    playSound(audioLogin);
-  })
+  loginBtn.addEventListener("mouseenter", () => playSound(audioLogin));
   loginBtn.onclick = async () => {
     clearFormMessages();
     const email = loginEmailEl.value.trim();
@@ -206,7 +191,6 @@ if (loginBtn) {
       return showFormMessage(loginMessage, "Complete email y contraseña", "error");
     }
 
-    // --- FETCH AL BACKEND (Login) ---
     try {
       const res = await fetch(`${API_URL}/login`, {
         method: "POST",
@@ -215,12 +199,8 @@ if (loginBtn) {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Credenciales incorrectas");
 
-      // GUARDAR SESIÓN
-      // Asumimos que el backend devuelve algo como { message: "ok", user: { id: 1, email: "..." } }
-      // Si el backend solo devuelve éxito, creamos un objeto usuario básico con lo que tenemos.
       const userToSave = data.user || { email: email, id: data.userId || 'unknown' };
       sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
 
@@ -228,7 +208,7 @@ if (loginBtn) {
       showToast(`Bienvenido, ${userToSave.email}`);
 
       setTimeout(() => {
-        window.location.hash = '#camera'; // Navegar a la cámara
+        window.location.hash = '#camera';
         clearFormMessages();
       }, 600);
 
@@ -236,9 +216,8 @@ if (loginBtn) {
       markInputError(loginEmailEl);
       markInputError(loginPassEl);
       showFormMessage(loginMessage, err.message, "error");
-
       if (err.message.toLowerCase().includes("usuario no encontrado") || err.message.toLowerCase().includes("credenciales incorrectas")) {
-	playSound(audioUsuarioNoEncontrado);
+        playSound(audioUsuarioNoEncontrado);
       }
     }
   };
@@ -246,35 +225,26 @@ if (loginBtn) {
 
 // LOGOUT
 if (logoutBtn) {
-  logoutBtn.addEventListener("mouseenter", () => {
-    playSound(audioCerrarSesion);
-  });
-
-
+  logoutBtn.addEventListener("mouseenter", () => playSound(audioCerrarSesion));
   logoutBtn.onclick = () => {
     sessionStorage.removeItem('currentUser');
     showToast("Sesión cerrada");
-    
-    // Detener cámara
+
     if (video && video.srcObject) {
       video.srcObject.getTracks().forEach(track => track.stop());
       video.srcObject = null;
     }
-    
-    // Limpiar campos
+
     if(loginEmailEl) loginEmailEl.value = "";
     if(loginPassEl) loginPassEl.value = "";
 
-    window.location.hash = '#login'; 
+    window.location.hash = '#login';
   };
 }
 
-
-/* ==== Lógica de Cámara (CONECTADA A BASE DE DATOS) ==== */
-
+/* ==== Lógica de Cámara ==== */
 async function initCamera() {
-  if (!video || video.srcObject) return; 
-  
+  if (!video || video.srcObject) return;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     if(cameraLoading) cameraLoading.classList.add("hidden");
@@ -297,44 +267,24 @@ function captureImage() {
 
 async function sendImageToBackend(imageBlob) {
   if(captionText) captionText.textContent = "Procesando...";
-
   const formData = new FormData();
   formData.append("file", imageBlob, "image.jpg");
-
-  // Agregar ID de usuario si existe en sesión
   const user = getCurrentUser();
-  if (user && user.id) {
-    formData.append('userId', user.id);
-  } else {
-    // Si por alguna razón se perdió la sesión
-    console.warn("Usuario no autenticado al enviar imagen");
-  }
+  if (user && user.id) formData.append('userId', user.id);
 
   try {
-    const response = await fetch(`${API_URL}/caption`, {
-      method: "POST",
-      body: formData
-    });
-
+    const response = await fetch(`${API_URL}/caption`, { method: "POST", body: formData });
     if (!response.ok) {
       let errorMsg = "Error del servidor";
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.error || errorMsg;
-      } catch (e) {}
+      try { const errorData = await response.json(); errorMsg = errorData.error || errorMsg; } catch {}
       throw new Error(errorMsg);
     }
 
     const data = await response.json();
-    
-    // Mostrar descripción (soporta campo 'objects' o 'caption')
     captionText.textContent = data.objects || data.caption || "Descripción generada.";
-
-    // Reproducir audio
     if (data.audioUrl && audioPlayer) {
-      // Añadir timestamp para evitar caché del navegador si el nombre es igual
       audioPlayer.src = `${data.audioUrl}?t=${new Date().getTime()}`;
-      audioPlayer.play().catch(e => console.log("Error al reproducir audio:", e));
+      audioPlayer.play().catch(e => console.log("Error audio:", e));
     }
 
   } catch (err) {
@@ -343,124 +293,250 @@ async function sendImageToBackend(imageBlob) {
   }
 }
 
-// Eventos de Cámara
-if(captureBtn) {
-	captureBtn.addEventListener("mouseenter", () => {playSound(audioCapturarImagen);});
-	captureBtn.addEventListener("click", captureImage);
+if(captureBtn) { 
+  captureBtn.addEventListener("mouseenter", () => playSound(audioCapturarImagen)); 
+  captureBtn.addEventListener("click", captureImage); 
 }
-if(uploadBtn) {
-	uploadBtn.addEventListener("mouseenter", () => {playSound(audioSubirImagen);});
-	uploadBtn.addEventListener("click", () => fileInput.click());
+if(uploadBtn) { 
+  uploadBtn.addEventListener("mouseenter", () => playSound(audioSubirImagen)); 
+  uploadBtn.addEventListener("click", () => fileInput.click()); 
 }
-if(fileInput) fileInput.addEventListener("change", () => {
-  const file = fileInput.files[0];
-  if (file) sendImageToBackend(file);
+if(fileInput) fileInput.addEventListener("change", () => { 
+  const file = fileInput.files[0]; 
+  if(file) sendImageToBackend(file); 
 });
 
-
-/* --- Funciones Helpers de UI --- */
-
+/* --- Funciones Helpers --- */
 function showFormMessage(containerEl, text, type = "error", timeout = 4000) {
   if (!containerEl) return;
   containerEl.textContent = text;
   containerEl.classList.remove("error", "success");
   containerEl.classList.add(type, "visible");
-
-  if (timeout) {
-    setTimeout(() => {
-      containerEl.classList.remove("visible");
-    }, timeout);
-  }
+  if (timeout) setTimeout(() => containerEl.classList.remove("visible"), timeout);
 }
-
-function clearFormMessages() {
-  [loginMessage, registerMessage].forEach(m => {
-    if (m) {
-      m.className = "form-message";
-      m.textContent = "";
-    }
-  });
+function clearFormMessages() { 
+  [loginMessage, registerMessage].forEach(m => { 
+    if(m){ m.className="form-message"; m.textContent=""; } 
+  }); 
 }
-
-function showToast(text, timeout = 2200) {
-  if (!toast) return;
-  toast.textContent = text;
-  toast.classList.add("visible");
-  setTimeout(() => {
-    toast.classList.remove("visible");
-  }, timeout);
+function showToast(text, timeout=2200) { 
+  if(!toast) return; 
+  toast.textContent=text; 
+  toast.classList.add("visible"); 
+  setTimeout(()=>toast.classList.remove("visible"),timeout); 
 }
-
-function markInputError(inputEl, flag = true) {
-  if (!inputEl) return;
-  if (flag) {
-    inputEl.classList.add("input-error");
-    inputEl.setAttribute("aria-invalid", "true");
-  } else {
-    inputEl.classList.remove("input-error");
+function markInputError(inputEl, flag=true){
+  if(!inputEl) return; 
+  if(flag){
+    inputEl.classList.add("input-error"); 
+    inputEl.setAttribute("aria-invalid","true");
+  }else{
+    inputEl.classList.remove("input-error"); 
     inputEl.removeAttribute("aria-invalid");
   }
 }
-
-function validateEmail(email) {
+function validateEmail(email){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-
-let playCooldown = false;
-function playSound(audio) {
-  if (playCooldown) return;
-  playCooldown = true;
-
-  audio.currentTime = 0;
-  audio.play().catch(() => {});
-
-  setTimeout(() => playCooldown = false, 180);
+let playCooldown=false;
+function playSound(audio){
+  if(playCooldown) return; 
+  playCooldown=true; 
+  audio.currentTime=0; 
+  audio.play().catch(()=>{}); 
+  setTimeout(()=>playCooldown=false,180); 
 }
-
 
 const linkRegistrate = document.querySelector('a[href="#register"]');
-if (linkRegistrate) {
-  linkRegistrate.addEventListener("mouseenter", () => {
-    playSound(audioRegistrarse);
-  });
-}
-
-
+if (linkRegistrate) linkRegistrate.addEventListener("mouseenter", () => playSound(audioRegistrarse));
 const linkIniciarSesion = document.querySelector('a[href="#login"]');
-if (linkIniciarSesion) {
-  linkIniciarSesion.addEventListener("mouseenter", () => {
-    playSound(audioIniciarSesion);
-  });
+if (linkIniciarSesion) linkIniciarSesion.addEventListener("mouseenter", () => playSound(audioIniciarSesion));
+if (loginEmailEl) loginEmailEl.addEventListener("focus", () => playSound(audioEmail));
+if (loginPassEl) loginPassEl.addEventListener("focus", () => playSound(audioPassword));
+if (regEmailEl) regEmailEl.addEventListener("focus", () => playSound(audioEmail));
+if (regPassEl) regPassEl.addEventListener("focus", () => playSound(audioPassword));
+if (regPass2El) regPass2El.addEventListener("focus", () => playSound(audioRepetirPassword));
+
+/* ===============================================
+   RECONOCIMIENTO DE VOZ - WHISPER API
+   =============================================== */
+
+async function initVoiceRecognition() {
+  console.log("╔════════════════════════════════════════╗");
+  console.log("║  🎤 INICIALIZANDO WHISPER API         ║");
+  console.log("╚════════════════════════════════════════╝");
+
+  try {
+    // Verificar que la API está disponible
+    const healthCheck = await fetch(`${WHISPER_API_URL}/health`);
+    if (!healthCheck.ok) {
+      throw new Error("Whisper API no responde");
+    }
+    
+    const healthData = await healthCheck.json();
+    console.log("✓ Whisper API conectada:", healthData);
+    showToast("🎤 Reconocimiento de voz activado");
+
+    // Solicitar acceso al micrófono
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log("✓ Micrófono conectado");
+
+    // Configurar MediaRecorder
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType: 'audio/webm'
+    });
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      if (audioChunks.length === 0) return;
+
+      console.log("📦 Procesando audio...");
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      audioChunks = [];
+
+      await transcribeAudio(audioBlob);
+      
+      // Reiniciar grabación
+      setTimeout(startRecordingCycle, 100);
+    };
+
+    // Iniciar ciclo de grabación
+    startRecordingCycle();
+    
+    console.log("╔════════════════════════════════════════╗");
+    console.log("║   ✓ RECONOCIMIENTO VOZ ACTIVADO       ║");
+    console.log("╚════════════════════════════════════════╝");
+
+  } catch (error) {
+    console.error("❌ Error inicializando:", error);
+    showToast("❌ Error: " + error.message);
+  }
 }
 
-if (loginEmailEl) {
-  loginEmailEl.addEventListener("focus", () => {
-    playSound(audioEmail);
-  });
+function startRecordingCycle() {
+  if (!mediaRecorder || mediaRecorder.state !== 'inactive') return;
+  
+  audioChunks = [];
+  mediaRecorder.start();
+  isRecording = true;
+  console.log("🔴 Grabando... (3 segundos)");
+
+  // Detener después de 3 segundos
+  setTimeout(() => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      isRecording = false;
+    }
+  }, 3000);
 }
 
-if (loginPassEl) {
-  loginPassEl.addEventListener("focus", () => {
-    playSound(audioPassword);
-  });
+async function transcribeAudio(audioBlob) {
+  try {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio.webm');
+
+    console.log("🌐 Enviando audio a Whisper API...");
+    const response = await fetch(`${WHISPER_API_URL}/transcribe`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error en transcripción');
+    }
+
+    const data = await response.json();
+    const text = data.text.trim();
+
+    if (text && text.length > 0) {
+      console.log("╔════════════════════════════════════════╗");
+      console.log("║  🗣️  TRANSCRIPCIÓN DETECTADA         ║");
+      console.log("╚════════════════════════════════════════╝");
+      console.log(`📝 Texto: "${text}"`);
+
+      // Emitir evento para procesar comando
+      window.dispatchEvent(new CustomEvent("voice-text", { detail: text }));
+    } else {
+      console.log("🤫 Sin transcripción (silencio)");
+    }
+
+  } catch (error) {
+    console.error("❌ Error en transcripción:", error);
+  }
 }
 
-if (regEmailEl) {
-  regEmailEl.addEventListener("focus", () => {
-    playSound(audioEmail);
-  });
-}
+/* ===============================================
+   COMANDOS DE VOZ
+   =============================================== */
 
-if (regPassEl) {
-  regPassEl.addEventListener("focus", () => {
-    playSound(audioPassword);
-  });
-}
-
-if (regPass2El) {
-  regPass2El.addEventListener("focus", () => {
-    playSound(audioRepetirPassword);
-  });
-}
-
+window.addEventListener("voice-text", (event) => {
+  const text = event.detail.toLowerCase();
+  console.log("💬 Procesando comando:", text);
+  
+  if (captionText) {
+    captionText.textContent = `🎤 "${event.detail}"`;
+  }
+  
+  const contiene = (...palabras) => palabras.some(p => text.includes(p));
+  
+  if (contiene("login", "inicio", "entrar", "ingresar")) {
+    console.log("✓ Comando: NAVEGAR A LOGIN");
+    window.location.hash = "#login";
+    showToast("📱 Abriendo Login");
+    return;
+  }
+  
+  if (contiene("registro", "registrar", "crear cuenta")) {
+    console.log("✓ Comando: NAVEGAR A REGISTRO");
+    window.location.hash = "#register";
+    showToast("📝 Abriendo Registro");
+    return;
+  }
+  
+  if (contiene("cámara", "camara", "visión", "vision", "vista")) {
+    console.log("✓ Comando: NAVEGAR A CÁMARA");
+    const user = getCurrentUser();
+    if (user) {
+      window.location.hash = "#camera";
+      showToast("📷 Abriendo Cámara");
+    } else {
+      showToast("⚠️ Debes iniciar sesión primero");
+    }
+    return;
+  }
+  
+  if (contiene("capturar", "foto", "tomar", "imagen", "sacar")) {
+    console.log("✓ Comando: CAPTURAR IMAGEN");
+    if (window.location.hash === "#camera" && captureBtn) {
+      captureImage();
+      showToast("📸 Capturando imagen");
+    } else {
+      showToast("⚠️ Debes estar en la cámara");
+    }
+    return;
+  }
+  
+  if (contiene("cerrar", "salir", "logout")) {
+    console.log("✓ Comando: CERRAR SESIÓN");
+    if (logoutBtn && !logoutBtn.classList.contains('hidden')) {
+      logoutBtn.click();
+    }
+    return;
+  }
+  
+  if (contiene("ayuda", "comandos")) {
+    console.log("✓ Comando: AYUDA");
+    showToast("💡 Di: Login, Registro, Cámara, Capturar, Cerrar", 5000);
+    return;
+  }
+  
+  console.log("❌ Comando no reconocido");
+  showToast("❓ Comando no reconocido", 2000);
+});

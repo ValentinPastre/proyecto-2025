@@ -8,94 +8,59 @@
 </head>
 <body>
 
-  <!-- Toast y Logout son globales, están fuera de las "páginas" -->
+  <!-- TOAST y LOGOUT -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
   <button id="logoutBtn" class="btn btn-logout hidden">Cerrar Sesión</button>
 
-  <!-- Contenedor principal de las páginas -->
+  <!-- Contenedor principal -->
   <main id="app-router">
 
-    <!-- 
-      PÁGINA 1: LOGIN 
-      Cambiamos el ID por un 'data-page' para el router
-    -->
+    <!-- LOGIN -->
     <div id="page-login" class="container page-container" data-page="login">
       <h1 class="title">Iniciar Sesión</h1>
       <div id="loginMessage" class="form-message" aria-live="polite"></div>
-
-      <label for="loginEmail" class="hidden-label">Email</label>
       <input id="loginEmail" type="email" placeholder="Email" class="input" autocomplete="email" />
-
-      <label for="loginPassword" class="hidden-label">Contraseña</label>
       <input id="loginPassword" type="password" placeholder="Contraseña" class="input" autocomplete="current-password" />
-
       <button id="loginBtn" class="btn">Entrar</button>
-
-      <p class="switchText">
-        ¿No tenés cuenta? 
-        <!-- MODIFICADO: Ahora es un link de ancla (hash) -->
-        <a href="#register" class="switchLink">Registrate</a>
-      </p>
+      <p class="switchText">¿No tenés cuenta? <a href="#register" class="switchLink">Registrate</a></p>
     </div>
 
-    <!-- 
-      PÁGINA 2: REGISTRO 
-    -->
+    <!-- REGISTER -->
     <div id="page-register" class="container page-container" data-page="register">
       <h1 class="title">Registrarse</h1>
       <div id="registerMessage" class="form-message" aria-live="polite"></div>
-
-      <label for="regEmail" class="hidden-label">Email</label>
       <input id="regEmail" type="email" placeholder="Email" class="input" autocomplete="email" />
-
-      <label for="regPassword" class="hidden-label">Contraseña</label>
       <input id="regPassword" type="password" placeholder="Contraseña" class="input" autocomplete="new-password" />
-
-      <label for="regPassword2" class="hidden-label">Repetir Contraseña</label>
       <input id="regPassword2" type="password" placeholder="Repetir contraseña" class="input" autocomplete="new-password" />
-
       <button id="registerBtn" class="btn">Crear Cuenta</button>
-
-      <p class="switchText">
-        ¿Ya tenés cuenta? 
-        <!-- MODIFICADO: Ahora es un link de ancla (hash) -->
-        <a href="#login" class="switchLink">Iniciar sesión</a>
-      </p>
+      <p class="switchText">¿Ya tenés cuenta? <a href="#login" class="switchLink">Iniciar sesión</a></p>
     </div>
 
-    <!-- 
-      PÁGINA 3: CÁMARA 
-      Aplicamos los mismos estilos de layout de la vez pasada
-    -->
+    <!-- CAMERA -->
     <div id="page-camera" class="container page-container camera-layout" data-page="camera">
       <h1 class="title">Visión Asistida</h1>
-
       <div id="cameraLoading">Cargando cámara...</div>
-
       <div class="camera-container hidden" id="cameraContainer">
         <video id="camera" autoplay playsinline></video>
         <canvas id="snapshot"></canvas>
       </div>
-
       <div class="controls">
         <button id="captureBtn" class="btn">Capturar</button>
         <button id="uploadBtn" class="btn btn-secondary">Subir imagen</button>
         <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
-
       <div class="result">
         <h2>Resultado:</h2>
-        <p id="captionText">Esperando imagen...</p>
+        <p id="captionText">Esperando comando de voz...</p>
         <audio id="audioPlayer" controls></audio>
       </div>
     </div>
 
   </main>
 
-  <!-- 
-    MODIFICADO: 'defer' hace que el script se ejecute 
-    después de que el HTML esté listo 
-  -->
-  <script src="script.js" defer></script>
+  <!-- Scripts -->
+  <script src="script.js"></script>
+  <script src="voice-control.js"></script>
+
 </body>
 </html>

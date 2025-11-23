@@ -7,13 +7,17 @@ import FormData from "form-data";
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
 
+// Importar rutas de voz
+import voiceRouter from './routes/voice.js';
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 sqlite3.verbose();
 const db = new sqlite3.Database("/app/data/mydb.db");
-// crea tabla users si no existe
+
+// Crear tabla users si no existe
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -23,6 +27,10 @@ db.serialize(() => {
     )
   `);
 });
+
+// ============================================
+// RUTAS DE AUTENTICACIÓN
+// ============================================
 
 app.post("/api/register", async (req, res) => {
   const { email, password } = req.body;
@@ -58,23 +66,22 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-// multer para manejar imágenes
-const upload = multer({ dest: "uploads/" });
+// ============================================
+// RUTA DE CAPTIONING CON TTS
+// ============================================
 
-// BLIP API URL
-// URL de fallback correcta
+const upload = multer({ dest: "uploads/" });
 const CAPTION_API_URL = process.env.CAPTION_API_URL || "http://captioning:3000/caption";
 
-// Multer espera el campo "file" 
 app.post("/api/caption", upload.single("file"), async (req, res) => {
-    let imgPath; // Definir imgPath aquí para usarlo en finally
+    let imgPath;
     
     try {
         if (!req.file) {
             return res.status(400).json({ error: "No file received" });
         }
 
-        imgPath = req.file.path; // Asignar el path
+        imgPath = req.file.path;
 
         const formData = new FormData();
         formData.append("file", fs.createReadStream(imgPath));
@@ -83,13 +90,13 @@ app.post("/api/caption", upload.single("file"), async (req, res) => {
             headers: formData.getHeaders(),
         });
 
-        //  Definir la variable 'captionText' 
         const captionText = response.data.caption;
 
-        // Borrar archivo temporal después de usarlo
+        // Borrar archivo temporal
         fs.unlinkSync(imgPath); 
-        imgPath = null; // Marcar como borrado
+        imgPath = null;
 
+        // Llamar a TTS
         const ttsResponse = await axios.post(process.env.TTS_API_URL, {
             text: captionText,
             voice: "bm_fable",
@@ -106,13 +113,101 @@ app.post("/api/caption", upload.single("file"), async (req, res) => {
         return res.status(500).json({ error: "Captioning/TTS failed" });
 
     } finally {
-        // Asegurarse de borrar el archivo si hubo un error antes
         if (imgPath) {
             fs.unlink(imgPath, (err) => {
-                if (err) console.error("Error deleting temp file in finally:", err);
+                if (err) console.error("Error deleting temp file:", err);
             });
         }
     }
 });
 
-app.listen(3000, () => console.log("Backend running on port 3000"));
+// ============================================
+// RUTAS DE CONTROL POR VOZ
+// ============================================
+
+app.use('/api/voice', voiceRouter);
+
+// Ruta adicional para convertir texto a voz usando tu TTS existente
+app.post('/api/voice/speak', express.json(), async (req, res) => {
+    try {
+        const { text } = req.body;
+
+        if (!text) {
+            return res.status(400).json({ error: 'Texto requerido' });
+        }
+
+        // Llamar a tu API de TTS existente
+        const ttsResponse = await axios.post(process.env.TTS_API_URL, {
+            text: text,
+            voice: 'bm_fable',
+            speed: 1.0
+        });
+
+        // Devolver la URL del audio generado
+        return res.json({
+            success: true,
+            audioUrl: ttsResponse.data.audio_url
+        });
+
+    } catch (error) {
+        console.error('Error en TTS:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+        });
+    }
+});
+
+// ============================================
+// RUTA DE SALUD
+// ============================================
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        services: {
+            backend: 'running',
+            captioning: process.env.CAPTION_API_URL || 'http://captioning:3000',
+            tts: process.env.TTS_API_URL || 'http://tts:8002',
+            voiceControl: 'enabled'
+        }
+    });
+});
+
+// ============================================
+// MANEJO DE ERRORES
+// ============================================
+
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({
+        error: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
+
+// ============================================
+// INICIAR SERVIDOR
+// ============================================
+
+app.listen(3000, () => {
+    console.log(`
+╔════════════════════════════════════════════════╗
+║   🚀 Visión Asistida - Backend Server         ║
+║      con Control de Voz Integrado             ║
+║                                                ║
+║   Puerto: 3000                                 ║
+║   Frontend: http://localhost:8080             ║
+║   Backend: http://localhost:3000              ║
+║   Captioning: ${process.env.CAPTION_API_URL || 'http://captioning:3000'}
+║   TTS: ${process.env.TTS_API_URL || 'http://tts:8002'}
+║                                                ║
+║   🎤 Rutas de Voz:                            ║
+║   - POST /api/voice/process                   ║
+║   - POST /api/voice/command                   ║
+║   - GET  /api/voice/commands                  ║
+║   - POST /api/voice/speak                     ║
+╚════════════════════════════════════════════════╝
+    `);
+});
