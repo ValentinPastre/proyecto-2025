@@ -36,3 +36,6 @@ tts/outputs/
 
 # VSCode
 .vscode/
+
+# Database
+data/database.db

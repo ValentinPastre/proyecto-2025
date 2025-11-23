@@ -12,7 +12,10 @@ export default class CaptionService {
             const imageBuffer = fs.createReadStream(imagePath);
 
             const form = new FormData();
-            form.append("file", imageBuffer);
+            form.append("file", imageBuffer, {
+                filename: "image.jpg",
+                contentType: "image/jpeg"
+            });
 
             const response = await this.httpClient.post(`${this.captionURL}`, form, {
                 headers: form.getHeaders(),

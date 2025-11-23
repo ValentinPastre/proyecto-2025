@@ -7,6 +7,10 @@ import soundfile as sf
 from kokoro import KPipeline
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import time
+import numpy as np
+from fastapi.responses import FileResponse
+
 
 app = FastAPI()
 
@@ -24,12 +28,14 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def clean_outputs():
     files = glob.glob(os.path.join(OUTPUT_DIR, "*.wav"))
+    now = time.time()
     for f in files:
-        try:
-            os.remove(f)
-            print(f"File deleted: {f}")
-        except Exception as e:
-            print(f"Delete audio failed {f}: {e}")
+        if now - os.path.getmtime(f) > 300: #5 min
+            try:
+                os.remove(f)
+                print(f"File deleted: ", f)
+            except Exception as e:
+                print(f"Delete audio failed {f}: {e}")
 
 
 class TTSRequest(BaseModel):
@@ -38,17 +44,14 @@ class TTSRequest(BaseModel):
     speed: float = 1.0
 
 
-# 1. Cambiado de @app.get a @app.post
 @app.post("/tts")
-# 2. Cambiada la firma de la función para que acepte el Body de TTSRequest
 async def generate_tts(request: TTSRequest):
-    clean_outputs()
+    # NO limpiar todavía
+    # clean_outputs()
 
-    # generate unique filename
     filename = f"{uuid.uuid4()}.wav"
     output_path = os.path.join(OUTPUT_DIR, filename)
 
-    # 3. Usar request.text, request.voice, y request.speed del body
     generator = pipeline(
         request.text,
         voice=request.voice,
@@ -56,15 +59,25 @@ async def generate_tts(request: TTSRequest):
         split_pattern=r'\n+'
     )
 
-    # get first audio segment for simplicity
+    # Generar audio real
     for gs, ps, audio in generator:
-        sf.write(output_path, audio, 24000)
-        break # Asegurarse de que solo se escriba un archivo
+        audio_np = audio.detach().cpu().numpy()
+        audio_int16 = (audio_np * 32767).astype(np.int16)
+        sf.write(output_path, audio_int16, 24000, subtype="PCM_16")
 
-    # Esta URL es correcta porque el puerto 8002 está expuesto al host
-    # y el frontend (navegador) puede acceder a él.
-    return {"audio_url": f"http://localhost:8002/audio/{filename}"}
+        break
 
+    internal_url = f"http://tts:8002/audio/{filename}"
+    public_url = f"http://localhost:8002/audio/{filename}"
 
-# serve audio files
-app.mount("/audio", StaticFiles(directory=OUTPUT_DIR), name="audio")
+    return {
+        "internal_url": internal_url,
+        "audio_url": public_url
+    }
+
+@app.get("/audio/{filename}")
+async def serve_audio(filename: str):
+    file_path = os.path.join(OUTPUT_DIR, filename)
+    return FileResponse(file_path, media_type="audio/wav")
+
+# app.mount("/audio", StaticFiles(directory=OUTPUT_DIR), name="audio")

@@ -313,7 +313,7 @@ async function sendImageToBackend(imageBlob) {
   try {
     console.log("API_URL is:", API_URL);
 
-    const response = await fetch(`${API_URL}/caption`, {
+    const response = await fetch(`${API_URL}/process`, {
       method: "POST",
       body: formData
     });
@@ -338,8 +338,9 @@ async function sendImageToBackend(imageBlob) {
     // Reproducir audio
     if (data.audioUrl && audioPlayer) {
       // Añadir timestamp para evitar caché del navegador si el nombre es igual
-      audioPlayer.src = `${data.audioUrl}?t=${new Date().getTime()}`;
-      audioPlayer.play().catch(e => console.log("Error al reproducir audio:", e));
+      audioPlayer.src = data.audioUrl;
+      audioPlayer.load();
+      audioPlayer.play();
     }
 
   } catch (err) {

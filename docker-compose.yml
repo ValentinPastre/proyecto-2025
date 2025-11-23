@@ -22,9 +22,10 @@ services:
       - captioning
       - tts
     environment:
-      - JWT_SECRET="supersecret"
+      - JWT_SECRET=supersecret
       - CAPTION_API_URL=http://captioning:3000/caption
       - TTS_API_URL=http://tts:8002/tts
+      - PUBLIC_TTS_HOST=localhost
     volumes:
       - ./data:/app/data
     
