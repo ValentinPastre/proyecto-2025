@@ -45,9 +45,13 @@ class VoiceControl {
             this.onStatusChange('stopped');
             console.log('🎤 Detenido');
             
-            // Solo reiniciar si continuous está activo y realmente estaba escuchando
+            // Reiniciar automáticamente después de 500ms si continuous está activo
             if (this.continuous && wasListening) {
-                setTimeout(() => this.iniciar(), 500);
+                setTimeout(() => {
+                    if (this.continuous) {
+                        this.iniciar();
+                    }
+                }, 500);
             }
         };
 
@@ -211,8 +215,9 @@ function inicializarComandosVisionAsistida(voiceControl) {
         if (input) {
             input.value = texto;
             input.dispatchEvent(new Event('input', { bubbles: true }));
+            console.log(`✓ Contraseña repetida: ${texto}`);
         }
-    }, { descripcion: 'Repetir contraseña en registro' });
+    }, { descripcion: 'Repetir contraseña en registro', prioridad: 15 });
 
     voiceControl.registrarComando('iniciar sesión', () => {
         console.log('🔍 Buscando botón de login...');
@@ -319,17 +324,29 @@ function inicializarComandosVisionAsistida(voiceControl) {
 
     voiceControl.registrarComando('subir imagen', () => {
         const btn = document.getElementById('uploadBtn');
-        if (btn) btn.click();
+        if (btn) {
+            console.log('📂 Abriendo selector de archivos...');
+            // Simular click del usuario en el botón
+            btn.click();
+        } else {
+            console.log('❌ Botón de subir no encontrado');
+        }
     }, { descripcion: 'Abrir selector de archivo' });
 
     voiceControl.registrarComando('subir archivo', () => {
         const btn = document.getElementById('uploadBtn');
-        if (btn) btn.click();
+        if (btn) {
+            console.log('📂 Abriendo selector de archivos...');
+            btn.click();
+        }
     }, { descripcion: 'Abrir selector de archivo' });
 
     voiceControl.registrarComando('cargar imagen', () => {
         const btn = document.getElementById('uploadBtn');
-        if (btn) btn.click();
+        if (btn) {
+            console.log('📂 Abriendo selector de archivos...');
+            btn.click();
+        }
     }, { descripcion: 'Abrir selector de archivo' });
 
     // ====== COMANDOS GENERALES ======
@@ -349,31 +366,37 @@ function inicializarComandosVisionAsistida(voiceControl) {
         mostrarAyudaComandos(voiceControl);
     }, { descripcion: 'Mostrar lista de comandos disponibles' });
 
-    voiceControl.registrarComando('detener escucha', () => {
+    voiceControl.registrarComando('desactivar voz', () => {
+        voiceControl.continuous = false;
         voiceControl.detener();
-    }, { descripcion: 'Detener el sistema de reconocimiento de voz' });
+        console.log('🔇 Sistema de voz desactivado');
+    }, { descripcion: 'Desactivar el reconocimiento de voz' });
 
-    voiceControl.registrarComando('activar escucha', () => {
+    voiceControl.registrarComando('activar voz', () => {
+        voiceControl.continuous = true;
         voiceControl.iniciar();
-    }, { descripcion: 'Activar el sistema de reconocimiento de voz' });
+        console.log('🎤 Sistema de voz activado');
+    }, { descripcion: 'Activar el reconocimiento de voz' });
 
-    voiceControl.registrarComando('repetir', () => {
+    voiceControl.registrarComando('reproducir', () => {
         const audioPlayer = document.getElementById('audioPlayer');
         if (audioPlayer && audioPlayer.src) {
             audioPlayer.currentTime = 0;
             audioPlayer.play();
+            console.log('🔊 Reproduciendo audio');
+        } else {
+            console.log('⚠️ No hay audio para reproducir');
         }
-    }, { descripcion: 'Repetir el último audio' });
-
-    voiceControl.registrarComando('pausar audio', () => {
-        const audioPlayer = document.getElementById('audioPlayer');
-        if (audioPlayer) audioPlayer.pause();
-    }, { descripcion: 'Pausar el audio' });
+    }, { descripcion: 'Reproducir el último audio', prioridad: 5 });
 
     voiceControl.registrarComando('reproducir audio', () => {
         const audioPlayer = document.getElementById('audioPlayer');
-        if (audioPlayer) audioPlayer.play();
-    }, { descripcion: 'Reproducir el audio' });
+        if (audioPlayer && audioPlayer.src) {
+            audioPlayer.currentTime = 0;
+            audioPlayer.play();
+            console.log('🔊 Reproduciendo audio');
+        }
+    }, { descripcion: 'Reproducir el audio', prioridad: 5 });
 }
 
 function mostrarAyudaComandos(voiceControl) {
@@ -478,13 +501,16 @@ function inicializarSistemaVoz() {
                 case 'listening':
                     ui.statusDiv.textContent = '🎤 Escuchando...';
                     ui.toggleBtn.style.background = '#4ade80';
+                    ui.toggleBtn.textContent = '🎤';
                     break;
                 case 'stopped':
-                    ui.statusDiv.textContent = 'Inactivo';
-                    ui.toggleBtn.style.background = 'white';
+                    ui.statusDiv.textContent = 'Reactivando...';
+                    ui.toggleBtn.style.background = '#fbbf24';
+                    ui.toggleBtn.textContent = '⏸️';
                     break;
                 case 'error':
                     ui.statusDiv.textContent = `Error: ${error}`;
+                    ui.toggleBtn.style.background = '#ef4444';
                     break;
                 case 'not-supported':
                     ui.statusDiv.textContent = 'No soportado';
@@ -503,16 +529,33 @@ function inicializarSistemaVoz() {
     inicializarComandosVisionAsistida(voiceControlInstance);
 
     ui.toggleBtn.addEventListener('click', () => {
-        if (voiceControlInstance.isListening) {
+        if (voiceControlInstance.continuous) {
+            // Desactivar modo continuo
+            voiceControlInstance.continuous = false;
             voiceControlInstance.detener();
+            ui.toggleBtn.style.background = '#ef4444';
+            ui.toggleBtn.textContent = '🔇';
+            ui.statusDiv.textContent = 'Desactivado';
         } else {
+            // Activar modo continuo
+            voiceControlInstance.continuous = true;
             voiceControlInstance.iniciar();
+            ui.toggleBtn.style.background = '#4ade80';
+            ui.toggleBtn.textContent = '🎤';
+            ui.statusDiv.textContent = 'Escuchando...';
         }
     });
 
     ui.helpBtn.addEventListener('click', () => {
         mostrarAyudaComandos(voiceControlInstance);
     });
+
+    // ⭐ INICIAR AUTOMÁTICAMENTE al cargar la página
+    console.log('🚀 Iniciando reconocimiento de voz automático...');
+    setTimeout(() => {
+        voiceControlInstance.iniciar();
+        ui.statusDiv.textContent = '🎤 Activado automáticamente';
+    }, 1000); // Espera 1 segundo para que el usuario vea la interfaz
 
     console.log('✅ Sistema de voz completamente inicializado para Visión Asistida');
 }
