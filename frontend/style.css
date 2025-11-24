@@ -292,3 +292,15 @@ body {
 .btn-logout:hover {
   background: #991b1b;
 }
+
+.page-container.camera-layout {
+  width: 95%;
+  max-width: 1000px; /* probar entre 900 y 1100 */
+  padding: 2em;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+}
+
+/* Asegurar que el bloque de resultado acompañe el nuevo ancho */
+.page-container.camera-layout .result {
+  max-width: 900px;
+}
