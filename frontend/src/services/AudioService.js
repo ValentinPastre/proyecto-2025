@@ -41,4 +41,27 @@ export default class AudioService {
     audioEl.src = `${url}?t=${Date.now()}`;
     audioEl.play().catch(()=>{});
   }
+
+  /**
+ * Reproduce un audio base64 devuelto por el backend (TTS)
+ * @param {{ audio_base64: string }} param0 
+ */
+playTTSResponse(apiUrl, { audio_base64 }) {
+  if (!audio_base64) return;
+
+  try {
+    // Construir la URL en formato data:audio/wav;base64,...
+    const audioUrl = `${apiUrl},${audio_base64}`;
+
+    // Crear el objeto Audio y reproducir
+    const audio = new Audio(audioUrl);
+    audio.play().catch(err => {
+      console.error("Error reproduciendo TTS:", err);
+    });
+
+  } catch (err) {
+    console.error("Error en playTTSResponse:", err);
+  }
+}
+
 }

@@ -312,7 +312,7 @@ export default class AppController {
       if (data.audioUrl || data.audio_url) {
         this.audioService.setPlayerSrc(this.audioPlayer, data.audioUrl || data.audio_url);
       } else if (data.audio_base64) {
-        this.audioService.playTTSResponse({ audio_base64: data.audio_base64 });
+        this.audioService.playTTSResponse(this.API_URL, { audio_base64: data.audio_base64 });
       }
     } catch (err) {
       console.error(err);
