@@ -153,18 +153,31 @@ body {
 /* Contenedor de la camara */
 .camera-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 700px;
   position: relative;
   margin: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1em;
+  flex-wrap: nowrap;
 }
 
-/* Video y canvas responsivos */
-video, canvas {
+/* Video y canvas dentro del contenedor de camara:
+   - ocupan aproximadamente la mitad cada uno
+   - mantienen aspect-ratio 4/3
+   - border-radius y fondo */
+.camera-container video,
+.camera-container canvas {
+  flex: 1 1 48%;
+  max-width: 48%;
+  aspect-ratio: 4 / 3;
   width: 100%;
   height: auto;
-  aspect-ratio: 4 / 3;
   border-radius: 10px;
   background: black;
+  object-fit: cover;
 }
 
 /* Controles inferiores (capturar / subir) */
