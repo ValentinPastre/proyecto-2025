@@ -69,11 +69,9 @@ def seleccionar_microfono():
 
 def main():
     mic_id = seleccionar_microfono()
-
-    print("\n" + "="*50)
+    
     print(" Whisper argentino: Push-To-Talk")
     print(" Espacio para hablar | ESC para salir")
-    print("="*50 + "\n")
 
     buffer_audio = []
     grabando = False
@@ -116,6 +114,6 @@ def main():
                     stream.read(int(SAMPLE_RATE * 0.1))     
             except KeyboardInterrupt:
                 break
-
+            
 if __name__ == "__main__":
     main()
