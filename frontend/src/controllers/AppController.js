@@ -307,8 +307,7 @@ export default class AppController {
 
     try {
       const data = await this.api.uploadImage(formData);
-      this.captionText.textContent = data.objects || data.caption || 'Descripción generada.';
-      
+      this.captionText.textContent = data.objects || data.caption || 'Descripción generada.'; 
       if (data.audioUrl || data.audio_url) {
         this.audioService.setPlayerSrc(this.audioPlayer, data.audioUrl || data.audio_url);
       } else if (data.audio_base64) {

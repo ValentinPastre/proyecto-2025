@@ -12,7 +12,7 @@ export default class ApiClient {
   }
 
   uploadImage(formData){
-    return this._postForm('/caption', formData);
+    return this._postForm('/process', formData);
   }
 
   synthesize(text){

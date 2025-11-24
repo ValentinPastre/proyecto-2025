@@ -15,7 +15,7 @@ export default class TTSService {
                 }
             );
 
-            return ttsResponse.data.internalUrl;
+            return ttsResponse.data.audio_url;
 
         } catch(err) {
             console.error("TtsService.generateAudio error:", err);
