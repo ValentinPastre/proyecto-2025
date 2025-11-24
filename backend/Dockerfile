@@ -1,12 +1,13 @@
 FROM node:20
 
 WORKDIR /app
-RUN mkdir -p /app/data
 
-COPY package*.json ./backend/
-RUN npm install --prefix backend
+COPY package*.json ./
+RUN npm install
 
 COPY . .
+
+RUN mkdir -p /app/data
 
 EXPOSE 3000
 
