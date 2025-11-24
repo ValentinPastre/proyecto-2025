@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Frontend con Nginx
   frontend:
@@ -19,15 +21,20 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - JWT_SECRET=supersecret
       - CAPTION_API_URL=http://captioning:3000/caption
       - TTS_API_URL=http://tts:8002/tts
+      - PUBLIC_TTS_HOST=localhost
+      - WHISPER_API_URL=http://speech-to-text:5000/api
+      - DATABASE_PATH=/app/data/mydb.db
     volumes:
       - ./backend:/app
-      - /app/node_modules
       - ./backend/data:/app/data
+      - /app/node_modules
     depends_on:
       - captioning
       - tts
+      - speech-to-text
     networks:
       - app-network
 
@@ -38,8 +45,10 @@ services:
       - "3001:3000"
     environment:
       - PYTHONUNBUFFERED=1
+      - MODEL_PATH=/app/models
     volumes:
       - ./captioning:/app
+      - ./captioning/models:/app/models
     networks:
       - app-network
 
@@ -50,8 +59,24 @@ services:
       - "8002:8002"
     environment:
       - PYTHONUNBUFFERED=1
+      - PORT=8002
     volumes:
       - ./tts:/app
+    networks:
+      - app-network
+
+  # Servicio de Speech-to-Text (Whisper Argentino)
+  speech-to-text:
+    build: ./SpeechToText
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=5000
+      - MODEL_PATH=/app/whisper_argentino
+    volumes:
+      - ./SpeechToText:/app
+      - ./SpeechToText/whisper_argentino:/app/whisper_argentino
     networks:
       - app-network
 

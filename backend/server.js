@@ -1,11 +1,5 @@
-import express from "express";
-import cors from "cors";
-import multer from "multer";
-import axios from "axios";
-import fs from "fs";
-import FormData from "form-data";
-import sqlite3 from "sqlite3";
-import bcrypt from "bcrypt";
+import { buildApp } from "./app.js";
+const app = buildApp();
 
 // Importar rutas de voz
 import voiceRouter from './routes/voice.js';
@@ -211,3 +205,6 @@ app.listen(3000, () => {
 ╚════════════════════════════════════════════════╝
     `);
 });
+app.listen(3000, () =>
+    console.log("Backend running on port 3000")
+);

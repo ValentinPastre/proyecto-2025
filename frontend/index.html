@@ -1,21 +1,55 @@
+<!--
+index.html — Pagina principal del frontend
+
+Contiene:
+- Router básico mediante data-page + AppController
+- Paginas: Login, Registro y Camara
+- Elementos globales: toast y boton de logout
+- Script principal con type="module" y defer
+
+Accesibilidad:
+- role="status" y aria-live en toast y mensajes
+- hidden-label para inputs pero visibles para lectores de pantalla
+
+NOVEDADES:
+- Indicador visual de reconocimiento de voz
+- Mejor manejo de módulos ES6
+-->
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visión Asistida</title>
+  <title>Visión Asistida - Comandos de Voz</title>
+  <!-- CSS principal -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- TOAST y LOGOUT -->
+  <!--
+  TOAST GLOBAL
+  - Se usa para mensajes de exito o error
+  - aria-live="polite" permite que lectores de pantalla lean los mensajes
+  -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <!--
+  INDICADOR DE RECONOCIMIENTO DE VOZ
+  - Nuevo: Muestra que el sistema de voz está activo
+  - Click para ayuda de comandos
+  -->
+  <div id="voice-indicator" class="voice-indicator" title="Reconocimiento de voz activo - Di 'ayuda' para ver comandos">
+    🎤
+  </div>
+
+  <!-- Boton de logout global (se oculta hasta iniciar sesion) -->
   <button id="logoutBtn" class="btn btn-logout hidden">Cerrar Sesión</button>
 
-  <!-- Contenedor principal -->
+  <!-- Contenedor principal de "páginas" manejadas por router -->
   <main id="app-router">
 
-    <!-- LOGIN -->
+    <!-- Pagina: LOGIN -->
     <div id="page-login" class="container page-container" data-page="login">
       <h1 class="title">Iniciar Sesión</h1>
       <div id="loginMessage" class="form-message" aria-live="polite"></div>
@@ -25,7 +59,7 @@
       <p class="switchText">¿No tenés cuenta? <a href="#register" class="switchLink">Registrate</a></p>
     </div>
 
-    <!-- REGISTER -->
+    <!-- Pagina: REGISTRO -->
     <div id="page-register" class="container page-container" data-page="register">
       <h1 class="title">Registrarse</h1>
       <div id="registerMessage" class="form-message" aria-live="polite"></div>
@@ -33,34 +67,51 @@
       <input id="regPassword" type="password" placeholder="Contraseña" class="input" autocomplete="new-password" />
       <input id="regPassword2" type="password" placeholder="Repetir contraseña" class="input" autocomplete="new-password" />
       <button id="registerBtn" class="btn">Crear Cuenta</button>
-      <p class="switchText">¿Ya tenés cuenta? <a href="#login" class="switchLink">Iniciar sesión</a></p>
+
+      <p class="switchText">
+        ¿Ya tenés cuenta? 
+        <a href="#login" class="switchLink">Iniciar sesión</a>
+      </p>
     </div>
 
-    <!-- CAMERA -->
+    <!-- Pagina: CAMARA -->
     <div id="page-camera" class="container page-container camera-layout" data-page="camera">
       <h1 class="title">Visión Asistida</h1>
+
+      <!-- Mensaje inicial mientras inicia la camara -->
       <div id="cameraLoading">Cargando cámara...</div>
+
+      <!-- Contenedor de video + canvas -->
       <div class="camera-container hidden" id="cameraContainer">
         <video id="camera" autoplay playsinline></video>
         <canvas id="snapshot"></canvas>
       </div>
+
+      <!-- Controles del usuario -->
       <div class="controls">
         <button id="captureBtn" class="btn">Capturar</button>
         <button id="uploadBtn" class="btn btn-secondary">Subir imagen</button>
         <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
+
+      <!-- Resultado de caption + TTS -->
       <div class="result">
         <h2>Resultado:</h2>
         <p id="captionText">Esperando comando de voz...</p>
         <audio id="audioPlayer" controls></audio>
       </div>
+
+      <!-- Ayuda de comandos de voz (oculta inicialmente) -->
+      <div id="voice-help" class="voice-help hidden">
+        <h3>Comandos de Voz Disponibles:</h3>
+        <div id="voice-commands-list"></div>
+      </div>
     </div>
 
   </main>
 
-  <!-- Scripts -->
-  <script src="script.js"></script>
-  <script src="voice-control.js"></script>
+  <!-- Scripts en el orden correcto para módulos ES6 -->
+  <script type="module" src="main.js"></script>
 
 </body>
 </html>
