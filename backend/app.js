@@ -33,6 +33,7 @@ import authRoutes from "./routes/authRoutes.js";
 import ttsRoutes from "./routes/ttsRoutes.js";
 import captionRoutes from "./routes/captionRoutes.js";
 import orchestratorRoutes from "./routes/orchestratorRoutes.js";
+import voiceRoutes from './routes/voice.js';
 
 export function buildApp() {
     const app = express();
@@ -67,6 +68,7 @@ export function buildApp() {
     app.use("/api/tts", ttsRoutes(ttsController));
     app.use("/api/caption", captionRoutes(captionController));
     app.use("/api/process", orchestratorRoutes(orchestratorController));
+    app.user('/api/voice', voiceRoutes);
 
     return app;
 }
