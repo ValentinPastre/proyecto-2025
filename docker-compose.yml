@@ -55,3 +55,17 @@ services:
     volumes:
       - ./tts/outputs:/app/outputs
     command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+  speech-to-text:
+    build: ./SpeechToText
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=5000
+      - MODEL_PATH=/app/whisper_argentino
+    volumes:
+      - ./SpeechToText:/app
+      - ./SpeechToText/speech-to-text-andreani/whisper_argentino:/app/whisper_argentino
+    networks:
+      - app-network
