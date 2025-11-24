@@ -3,7 +3,9 @@ export class VoiceCommandService {
         this.mediaRecorder = null;
         this.audioChunks = [];
         this.isRecording = false;
-        this.whisperApiUrl = "http://127.0.0.1:5000/api";
+        
+
+        this.whisperApiUrl = "http://127.0.0.1:3000/api/voice";
         
         this.init();
     }
@@ -13,14 +15,14 @@ export class VoiceCommandService {
             await this.initVoiceRecognition();
             this.createVoiceIndicator();
         } catch (error) {
-            console.log('VoiceCommandService: Whisper API no disponible');
+            console.log('VoiceCommandService: Servicio no disponible', error);
         }
     }
 
     async initVoiceRecognition() {
         try {
             const healthCheck = await fetch(`${this.whisperApiUrl}/health`);
-            if (!healthCheck.ok) throw new Error("Whisper API no responde");
+            if (!healthCheck.ok) throw new Error("API de Voz no responde");
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
@@ -59,6 +61,7 @@ export class VoiceCommandService {
         this.mediaRecorder.start();
         this.isRecording = true;
 
+
         setTimeout(() => {
             if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
                 this.mediaRecorder.stop();
@@ -80,7 +83,7 @@ export class VoiceCommandService {
             if (!response.ok) throw new Error('Error en transcripción');
 
             const data = await response.json();
-            const text = data.text.trim();
+            const text = data.text ? data.text.trim() : "";
 
             if (text && text.length > 0) {
                 this.processVoiceCommand(text);
@@ -94,7 +97,6 @@ export class VoiceCommandService {
     processVoiceCommand(text) {
         console.log("Procesando comando:", text);
         
-        // Emitir evento global para que otros módulos escuchen
         window.dispatchEvent(new CustomEvent("voice-command", { 
             detail: { 
                 text: text,
@@ -102,14 +104,12 @@ export class VoiceCommandService {
             }
         }));
 
-        // Procesamiento local de comandos básicos
         this.executeBasicCommands(text);
     }
 
     executeBasicCommands(text) {
         const lowerText = text.toLowerCase();
         
-        // Comandos de navegación
         if (lowerText.includes('login') || lowerText.includes('iniciar sesión')) {
             window.location.hash = '#login';
             this.showToast("Navegando a Login");
@@ -140,43 +140,30 @@ export class VoiceCommandService {
 
     showHelp() {
         const currentPage = window.location.hash.substring(1) || 'login';
-        let helpMessage = '';
-        
-        switch(currentPage) {
-            case 'login':
-                helpMessage = 'Comandos: "login", "registro", "escribir [texto] en email", "enviar"';
-                break;
-            case 'register':
-                helpMessage = 'Comandos: "registro", "login", "escribir [texto] en contraseña", "enviar"';
-                break;
-            case 'camera':
-                helpMessage = 'Comandos: "capturar", "cámara", "cerrar sesión"';
-                break;
-        }
-        
-        this.showToast(helpMessage, 5000);
+        let helpMessage = 'Comandos disponibles...';
+        this.showToast(helpMessage, 3000);
     }
 
     createVoiceIndicator() {
+        if(document.getElementById('voice-indicator')) return;
         const indicator = document.createElement('div');
         indicator.id = 'voice-indicator';
         indicator.innerHTML = '🎤';
-        indicator.title = 'Reconocimiento de voz activo - Di "ayuda" para comandos';
-        
+        indicator.style.cssText = "position: fixed; bottom: 20px; right: 20px; background: red; color: white; padding: 10px; border-radius: 50%; z-index: 9999;";
         document.body.appendChild(indicator);
     }
 
     showToast(message, duration = 3000) {
-        // Usar el sistema de toast existente
         const toast = document.getElementById('toast');
         if (toast) {
             toast.textContent = message;
             toast.classList.add('visible');
             setTimeout(() => toast.classList.remove('visible'), duration);
+        } else {
+            console.log("Toast:", message);
         }
     }
 
-    // Método para detener el servicio
     stop() {
         if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
             this.mediaRecorder.stop();

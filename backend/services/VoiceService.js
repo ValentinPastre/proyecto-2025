@@ -1,18 +1,42 @@
+import axios from 'axios';
+import FormData from 'form-data';
+
 export class VoiceService {
     constructor() {
-        this.whisperApiUrl = process.env.WHISPER_API_URL || 'http://localhost:5000/api';
+        this.whisperApiUrl = process.env.WHISPER_API_URL || 'http://speech-to-text:5000';
     }
 
     async transcribeAudio(audioBuffer) {
         try {
-            //color aca la integracion con el whisper fine-tuneado
-            return "comando de ejemplo transcrito";
+            const formData = new FormData();
+            formData.append('file', audioBuffer, {
+                filename: 'audio.webm',
+                contentType: 'audio/webm',
+            });
+
+            console.log(`Enviando audio a: ${this.whisperApiUrl}/transcribe`);
+
+            const response = await axios.post(`${this.whisperApiUrl}/transcribe`, formData, {
+                headers: {
+                    ...formData.getHeaders(), 
+                },
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity
+            });
+
+            return response.data.text || response.data.transcription;
+
         } catch (error) {
-            throw new Error(`Transcription failed: ${error.message}`);
+            console.error('Error en VoiceService:', error.message);
+            if (error.response) {
+                console.error('Detalle del error remoto:', error.response.data);
+            }
+            throw new Error(`Fallo en transcripción: ${error.message}`);
         }
     }
 
     async interpretCommand(text) {
+        if (!text) return { action: 'unknown', confidence: 0, originalText: '' };
         const lowerText = text.toLowerCase();
         
         const commandPatterns = [
@@ -32,8 +56,7 @@ export class VoiceService {
                 pattern: /escribir\s+(.+?)\s+en\s+(email|correo)/,
                 action: 'fill_email',
                 extract: (match) => ({ value: match[1] })
-            },
-            //agregar mas comandos de voz si hace falta
+            }
         ];
 
         for (const pattern of commandPatterns) {

@@ -68,7 +68,7 @@ export function buildApp() {
     app.use("/api/tts", ttsRoutes(ttsController));
     app.use("/api/caption", captionRoutes(captionController));
     app.use("/api/process", orchestratorRoutes(orchestratorController));
-    app.user('/api/voice', voiceRoutes);
+    app.use('/api/voice', voiceRoutes);
 
     return app;
 }

@@ -8,52 +8,57 @@ export class VoiceController {
 
     setupEventListeners() {
         window.addEventListener("voice-command", (event) => {
+            console.log("Comando recibido en Controller:", event.detail.text); 
             this.handleAdvancedCommands(event.detail.text);
         });
 
-        this.setupVoiceFormHandlers();
     }
 
     handleAdvancedCommands(text) {
         const lowerText = text.toLowerCase();
         
+
         this.handleFormCommands(lowerText, text);
         
+
         this.handleAudioCommands(lowerText);
         
+
         this.handleSystemCommands(lowerText);
     }
 
     handleFormCommands(lowerText, originalText) {
-        // Comando: escribir [EMAIL] en email
-        const emailMatch = lowerText.match(/escribir\s+(.+?)\s+en\s+(email|correo|mail)/);
+
+        const cleanText = lowerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        const emailMatch = cleanText.match(/escribir\s+(.+?)\s+en\s+(email|correo|mail)/);
         if (emailMatch) {
             this.fillEmailField(emailMatch[1]);
             return;
         }
 
-        // Comando: escribir [PASSWORD] en contraseña
-        const passMatch = lowerText.match(/escribir\s+(.+?)\s+en\s+(contraseña|password|clave)/);
-        if (passMatch && !lowerText.includes('repetir')) {
+        // Comando: "escribir [PASSWORD] en contraseña"
+        const passMatch = cleanText.match(/escribir\s+(.+?)\s+en\s+(contrase?na|password|clave)/); // contrase?na acepta con o sin ñ
+        if (passMatch && !cleanText.includes('repetir')) {
             this.fillPasswordField(passMatch[1]);
             return;
         }
 
-        // Comando: repetir contraseña [PASSWORD]
-        const repeatPassMatch = lowerText.match(/repetir\s+(contraseña|password|clave)\s+(.+)/);
+        // Comando: "repetir contraseña [PASSWORD]"
+        const repeatPassMatch = cleanText.match(/repetir\s+(contrase?na|password|clave)\s+(.+)/);
         if (repeatPassMatch) {
             this.fillRepeatPasswordField(repeatPassMatch[2]);
             return;
         }
 
-        // Comando: enviar o confirmar
-        if (lowerText.match(/^(enviar|confirmar|aceptar|ok|mandar|okey)$/)) {
+        // Comando: "enviar" o "confirmar"
+        if (cleanText.match(/^(enviar|confirmar|aceptar|ok|ingresar)$/)) {
             this.submitCurrentForm();
             return;
         }
 
-        // Comando: limpiar o borrar
-        if (lowerText.match(/(limpiar|borrar|vaciar)/) && !lowerText.includes('sesión')) {
+        // Comando: "limpiar" o "borrar"
+        if (cleanText.match(/(limpiar|borrar|vaciar)/) && !cleanText.includes('sesion')) {
             this.clearCurrentForm();
             return;
         }
@@ -61,22 +66,26 @@ export class VoiceController {
 
     fillEmailField(emailText) {
         const email = emailText
-            .replace(/arroba/g, '@')
-            .replace(/punto/g, '.')
-            .replace(/\s+/g, '');
+            .replace(/\s+/g, '')       
+            .replace(/arroba/g, '@')   
+            .replace(/punto/g, '.')    
+            .toLowerCase();            
         
         const emailInputs = [
             document.getElementById('loginEmail'),
             document.getElementById('regEmail')
         ];
         
+        let found = false;
         emailInputs.forEach(input => {
             if (input && this.isElementVisible(input)) {
                 input.value = email;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
                 this.showToast(`Email: ${email}`);
+                found = true;
             }
         });
+        if(!found) console.log("No se encontró campo de email visible");
     }
 
     fillPasswordField(passwordText) {
@@ -112,11 +121,13 @@ export class VoiceController {
         const registerBtn = document.getElementById('registerBtn');
         
         if (loginBtn && this.isElementVisible(loginBtn)) {
+            console.log("Click en Login");
             loginBtn.click();
             return;
         }
         
         if (registerBtn && this.isElementVisible(registerBtn)) {
+            console.log("Click en Registro");
             registerBtn.click();
             return;
         }
@@ -127,6 +138,7 @@ export class VoiceController {
         inputs.forEach(input => {
             if (this.isElementVisible(input)) {
                 input.value = '';
+                input.dispatchEvent(new Event('input', { bubbles: true }));
             }
         });
         this.showToast('Formulario limpiado');
@@ -136,7 +148,7 @@ export class VoiceController {
         const audioPlayer = document.getElementById('audioPlayer');
         if (!audioPlayer) return;
 
-        if (lowerText.match(/(reproducir|repetir|escuchar)/) && !lowerText.includes('contraseña')) {
+        if (lowerText.match(/(reproducir|repetir|escuchar|play)/) && !lowerText.includes('contraseña')) {
             if (audioPlayer.src) {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(console.error);
@@ -152,18 +164,18 @@ export class VoiceController {
     }
 
     handleSystemCommands(lowerText) {
-        if (lowerText.includes('cerrar sesión') || lowerText.includes('logout')) {
+        if (lowerText.includes('cerrar sesion') || lowerText.includes('logout') || lowerText.includes('salir')) {
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) logoutBtn.click();
         }
     }
 
     isElementVisible(element) {
-        const container = element.closest('.page-container');
-        return container && !container.classList.contains('hidden');
+        return element.offsetWidth > 0 && element.offsetHeight > 0;
     }
 
     showToast(message, duration = 3000) {
+        console.log("TOAST:", message); // Backup por si no tienes UI de toast
         const toast = document.getElementById('toast');
         if (toast) {
             toast.textContent = message;

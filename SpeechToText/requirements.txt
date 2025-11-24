@@ -1,0 +1,7 @@
+flask
+flask-cors
+transformers
+accelerate
+soundfile
+numpy
+scipy
