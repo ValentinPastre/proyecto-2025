@@ -41,7 +41,7 @@ class SpeechRecognitionModel(nn.Module):
 
 corrector = SpellChecker(language=IDIOMA_CORRECTOR)
 
-def cargar_modelo(modelo_path="pesos_modelo_stt_argentino.pth", vocab_path="vocabulario.json"):
+def cargar_modelo(modelo_path="pesos_modelo_RNN.pth", vocab_path="vocabulario.json"):
     if not os.path.exists(modelo_path):
         sys.exit(1)
 
