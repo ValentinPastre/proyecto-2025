@@ -7,12 +7,13 @@ from transformers import pipeline
 
 app = Flask(__name__)
 CORS(app)
+
 MODEL_PATH = os.getenv("MODEL_PATH", "openai/whisper-small")
+# Detectar dispositivo
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
-print(f" Configurando Whisper...")
-print(f"Ruta del modelo: {MODEL_PATH}")
+print(f" Ruta del modelo: {MODEL_PATH}")
 print(f" Dispositivo: {DEVICE}")
 
 try:
@@ -22,10 +23,9 @@ try:
         device=DEVICE,
         torch_dtype=torch_dtype
     )
-    print("Modelo Custom Argentino cargado exitosamente.")
+    print(" Modelo Custom Argentino cargado exitosamente.")
 except Exception as e:
     print(f"Error cargando modelo custom ({e}).")
-    print(" Descargando e iniciando modelo base 'openai/whisper-small'...")
     pipe = pipeline(
         "automatic-speech-recognition",
         model="openai/whisper-small",
@@ -33,15 +33,9 @@ except Exception as e:
     )
     print(" Modelo Base cargado.")
 
-
-
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({
-        "status": "ok", 
-        "service": "whisper-argentino-api",
-        "device": DEVICE
-    })
+    return jsonify({"status": "ok", "service": "whisper-argentino-api"})
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
@@ -62,17 +56,13 @@ def transcribe():
             generate_kwargs={
                 "language": "spanish",
                 "task": "transcribe",
+                "num_beams": 1,
                 "temperature": 0.0
-
             }
         )
         
         text = result["text"].strip()
-        print(f"🗣️ Audio procesado: '{text}'")
-
-        if len(text) > 50 and len(set(text.split())) < 4:
-            print(f" Alucinación detectada y eliminada: {text}")
-            text = ""
+        print(f" Rápido: '{text}'")
 
         return jsonify({
             "text": text,
@@ -80,7 +70,7 @@ def transcribe():
         })
 
     except Exception as e:
-        print(f"Error en transcripción: {e}")
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     
     finally:

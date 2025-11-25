@@ -3,184 +3,221 @@ import { VoiceCommandService } from '../services/VoiceCommandService.js';
 export class VoiceController {
     constructor() {
         this.voiceService = new VoiceCommandService();
+        this.createPushToTalkButton();
         this.setupEventListeners();
+        this.isSpacePressed = false; // Para evitar repeticiones de tecla
     }
 
     setupEventListeners() {
+
         window.addEventListener("voice-command", (event) => {
-            console.log("Comando recibido en Controller:", event.detail.text); 
+            console.log("El controlador recibio:", event.detail.text);
             this.handleAdvancedCommands(event.detail.text);
         });
 
+        // implemente push to talk pq toma el ruido de fondo
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !this.isSpacePressed && !this.isTypingInInput(e)) {
+                e.preventDefault(); 
+                this.isSpacePressed = true;
+                
+                const btn = document.getElementById('ptt-btn');
+                this.startPTT(e, btn);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' && this.isSpacePressed) {
+                e.preventDefault();
+                this.isSpacePressed = false;
+                
+                const btn = document.getElementById('ptt-btn');
+                this.stopPTT(e, btn);
+            }
+        });
     }
+
+    isTypingInInput(e) {
+        const tag = e.target.tagName.toLowerCase();
+        const isInput = (tag === 'input' || tag === 'textarea');
+        return isInput && !e.target.readOnly; 
+    }
+
+    createPushToTalkButton() {
+        if(document.getElementById('ptt-btn')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'ptt-btn';
+        btn.innerHTML = '🎤';
+        btn.style.cssText = `
+            position: fixed; bottom: 30px; right: 30px; width: 70px; height: 70px; 
+            border-radius: 50%; background: #2196F3; color: white; border: none; 
+            font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 9999; 
+            cursor: pointer; transition: transform 0.1s, background 0.2s; user-select: none;
+        `;
+
+        // Eventos Mouse/Touch para el botón visual
+        btn.addEventListener('mousedown', (e) => this.startPTT(e, btn));
+        window.addEventListener('mouseup', (e) => this.stopPTT(e, btn)); 
+        btn.addEventListener('touchstart', (e) => this.startPTT(e, btn));
+        btn.addEventListener('touchend', (e) => this.stopPTT(e, btn));
+
+        document.body.appendChild(btn);
+    }
+
+    startPTT(e, btn) {
+        if (this.isTalking) return; 
+        this.isTalking = true;
+
+        if(btn) {
+            btn.style.background = '#F44336'; // Rojo = Grabando
+            btn.style.transform = 'scale(1.1)';
+        }
+        
+        console.log("Iniciando grabacion");
+        this.voiceService.startRecording();
+    }
+
+    stopPTT(e, btn) {
+        if (!this.isTalking) return;
+        this.isTalking = false;
+
+        if(btn) {
+            btn.style.background = '#2196F3'; // Azul = Esperando
+            btn.style.transform = 'scale(1)';
+        }
+        
+        console.log("Deteniendo y enviando");
+        this.voiceService.stopRecording();
+    }
+
 
     handleAdvancedCommands(text) {
-        const lowerText = text.toLowerCase();
-        
+        const cleanText = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        console.log("Texto normalizado:", cleanText);
 
-        this.handleFormCommands(lowerText, text);
-        
+        let commandFound = false;
 
-        this.handleAudioCommands(lowerText);
-        
 
-        this.handleSystemCommands(lowerText);
+        if (cleanText.match(/(login|entrar|inicio|acceder)/)) {
+             console.log("Comando login detectado");
+             window.location.hash = '#login';
+             this.voiceService.showToast("Navegando a Login");
+             commandFound = true;
+        }
+        else if (cleanText.match(/(registro|crear cuenta|registrarse|alta)/)) {
+             console.log("Comando registro detectado");
+             window.location.hash = '#register';
+             this.voiceService.showToast("Navegando a Registro");
+             commandFound = true;
+        }
+        else if (cleanText.match(/(camara|foto|vision)/)) {
+             console.log("Comando camara detectado");
+             window.location.hash = '#camera';
+             this.voiceService.showToast("Navegando a Cámara");
+             commandFound = true;
+        }
+
+        if (this.handleFormCommands(cleanText)) {
+            commandFound = true;
+        }
+
+        if (!commandFound) {
+            console.warn("No se encontro comando para", cleanText);
+            this.voiceService.showToast(`No entendí: "${text}"`);
+        }
     }
 
-    handleFormCommands(lowerText, originalText) {
+    handleFormCommands(cleanText) {
+        let executed = false;
 
-        const cleanText = lowerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-        const emailMatch = cleanText.match(/escribir\s+(.+?)\s+en\s+(email|correo|mail)/);
+        // "Escribir juan@gmail.com en email"
+        const emailMatch = cleanText.match(/escribir\s+(.+?)\s+en\s+(email|correo)/);
         if (emailMatch) {
+            console.log("Intento escribir email:", emailMatch[1]);
             this.fillEmailField(emailMatch[1]);
-            return;
+            executed = true;
         }
-
-        // Comando: "escribir [PASSWORD] en contraseña"
-        const passMatch = cleanText.match(/escribir\s+(.+?)\s+en\s+(contrase?na|password|clave)/); // contrase?na acepta con o sin ñ
-        if (passMatch && !cleanText.includes('repetir')) {
+        
+        // "Escribir 1234 en contraseña"
+        const passMatch = cleanText.match(/escribir\s+(.+?)\s+en\s+(contrase?na|clave)/);
+        if (passMatch) {
+            console.log("Intento escribir password:", passMatch[1]);
             this.fillPasswordField(passMatch[1]);
-            return;
+            executed = true;
         }
 
-        // Comando: "repetir contraseña [PASSWORD]"
-        const repeatPassMatch = cleanText.match(/repetir\s+(contrase?na|password|clave)\s+(.+)/);
-        if (repeatPassMatch) {
-            this.fillRepeatPasswordField(repeatPassMatch[2]);
-            return;
-        }
-
-        // Comando: "enviar" o "confirmar"
-        if (cleanText.match(/^(enviar|confirmar|aceptar|ok|ingresar)$/)) {
+        // Botones de acción
+        if (cleanText.match(/^(enviar|ingresar|entrar|confirmar)$/)) {
+            console.log("Intento enviar click");
             this.submitCurrentForm();
-            return;
+            executed = true;
+        }
+        
+        if (cleanText.match(/(borrar|limpiar|vaciar)/)) {
+            console.log("Intento limpiar formulario");
+            this.clearCurrentForm();
+            executed = true;
         }
 
-        // Comando: "limpiar" o "borrar"
-        if (cleanText.match(/(limpiar|borrar|vaciar)/) && !cleanText.includes('sesion')) {
-            this.clearCurrentForm();
-            return;
-        }
+        return executed;
     }
 
     fillEmailField(emailText) {
         const email = emailText
-            .replace(/\s+/g, '')       
-            .replace(/arroba/g, '@')   
-            .replace(/punto/g, '.')    
-            .toLowerCase();            
-        
-        const emailInputs = [
-            document.getElementById('loginEmail'),
-            document.getElementById('regEmail')
-        ];
-        
+            .replace(/\s+/g, '')
+            .replace(/arroba/g, '@')
+            .replace(/punto/g, '.')
+            .toLowerCase();
+            
+        const inputs = [document.getElementById('loginEmail'), document.getElementById('regEmail')];
         let found = false;
-        emailInputs.forEach(input => {
+        inputs.forEach(input => {
             if (input && this.isElementVisible(input)) {
                 input.value = email;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
-                this.showToast(`Email: ${email}`);
+                this.voiceService.showToast(`Email: ${email}`);
                 found = true;
             }
         });
-        if(!found) console.log("No se encontró campo de email visible");
+        if(!found) console.log("No encontré ningún input de email visible en pantalla");
     }
 
-    fillPasswordField(passwordText) {
-        const password = passwordText.replace(/\s+/g, '');
-        
-        const passInputs = [
-            document.getElementById('loginPassword'),
-            document.getElementById('regPassword')
-        ];
-        
-        passInputs.forEach(input => {
+    fillPasswordField(passText) {
+        const pass = passText.replace(/\s+/g, '');
+        const inputs = [document.getElementById('loginPassword'), document.getElementById('regPassword')];
+        let found = false;
+        inputs.forEach(input => {
             if (input && this.isElementVisible(input)) {
-                input.value = password;
+                input.value = pass;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
-                this.showToast('Contraseña ingresada');
+                this.voiceService.showToast(' Contraseña escrita');
+                found = true;
             }
         });
-    }
-
-    fillRepeatPasswordField(passwordText) {
-        const password = passwordText.replace(/\s+/g, '');
-        const repeatInput = document.getElementById('regPassword2');
-        
-        if (repeatInput && this.isElementVisible(repeatInput)) {
-            repeatInput.value = password;
-            repeatInput.dispatchEvent(new Event('input', { bubbles: true }));
-            this.showToast('Contraseña confirmada');
-        }
+        if(!found) console.log(" No encontré input de contraseña visible");
     }
 
     submitCurrentForm() {
         const loginBtn = document.getElementById('loginBtn');
-        const registerBtn = document.getElementById('registerBtn');
-        
+        const regBtn = document.getElementById('registerBtn'); // Asegúrate que este ID es correcto en tu HTML
+
         if (loginBtn && this.isElementVisible(loginBtn)) {
-            console.log("Click en Login");
             loginBtn.click();
-            return;
-        }
-        
-        if (registerBtn && this.isElementVisible(registerBtn)) {
-            console.log("Click en Registro");
-            registerBtn.click();
-            return;
+        } else if (regBtn && this.isElementVisible(regBtn)) {
+            regBtn.click();
+        } else {
+            console.log(" No encontré botón de login/registro visible");
         }
     }
 
     clearCurrentForm() {
-        const inputs = document.querySelectorAll('input[type="email"], input[type="password"]');
-        inputs.forEach(input => {
-            if (this.isElementVisible(input)) {
-                input.value = '';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        });
-        this.showToast('Formulario limpiado');
+        document.querySelectorAll('input').forEach(i => i.value = '');
+        this.voiceService.showToast(" Formulario limpio");
     }
 
-    handleAudioCommands(lowerText) {
-        const audioPlayer = document.getElementById('audioPlayer');
-        if (!audioPlayer) return;
-
-        if (lowerText.match(/(reproducir|repetir|escuchar|play)/) && !lowerText.includes('contraseña')) {
-            if (audioPlayer.src) {
-                audioPlayer.currentTime = 0;
-                audioPlayer.play().catch(console.error);
-                this.showToast('Reproduciendo audio');
-            }
-        }
-        else if (lowerText.match(/(pausar|detener|parar|stop)/)) {
-            if (!audioPlayer.paused) {
-                audioPlayer.pause();
-                this.showToast('Audio pausado');
-            }
-        }
-    }
-
-    handleSystemCommands(lowerText) {
-        if (lowerText.includes('cerrar sesion') || lowerText.includes('logout') || lowerText.includes('salir')) {
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) logoutBtn.click();
-        }
-    }
-
-    isElementVisible(element) {
-        return element.offsetWidth > 0 && element.offsetHeight > 0;
-    }
-
-    showToast(message, duration = 3000) {
-        console.log("TOAST:", message); // Backup por si no tienes UI de toast
-        const toast = document.getElementById('toast');
-        if (toast) {
-            toast.textContent = message;
-            toast.classList.add('visible');
-            setTimeout(() => toast.classList.remove('visible'), duration);
-        }
+    isElementVisible(el) {
+        // Verifica si el elemento existe y tiene tamaño (es visible)
+        return el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
     }
 }

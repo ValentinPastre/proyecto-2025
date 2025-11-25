@@ -11,8 +11,8 @@ RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pyt
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py .
+COPY main.py .
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+CMD ["python", "main.py"]

@@ -10,6 +10,8 @@ services:
       - "8080:80"
     depends_on:
       - backend
+    networks:
+      - app-network
 
   backend:
     build:
@@ -21,14 +23,18 @@ services:
     depends_on:
       - captioning
       - tts
+      - speech-to-text  # <--- CRÍTICO: Esto faltaba en tu archivo
     environment:
       - JWT_SECRET=supersecret
       - CAPTION_API_URL=http://captioning:3000/caption
       - TTS_API_URL=http://tts:8002/tts
       - PUBLIC_TTS_HOST=localhost
+      # Asegúrate que esta URL coincida con el nombre del servicio de abajo (speech-to-text)
+      - WHISPER_API_URL=http://speech-to-text:5000 
     volumes:
       - ./data:/app/data
-    
+    networks:
+      - app-network
 
   captioning:
     build:
@@ -42,6 +48,8 @@ services:
     volumes:
       - ./captioning/outputs:/app/outputs
     command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
+    networks:
+      - app-network
     
   tts:
     build:
@@ -55,6 +63,8 @@ services:
     volumes:
       - ./tts/outputs:/app/outputs
     command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+    networks:
+      - app-network
 
   speech-to-text:
     build: ./SpeechToText
@@ -67,3 +77,9 @@ services:
       - MODEL_PATH=/app/speech-to-text-andreani/whisper_argentino
     volumes:
       - ./SpeechToText:/app
+    networks:
+      - app-network
+      
+networks:
+  app-network:
+    driver: bridge
